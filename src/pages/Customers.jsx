@@ -1,304 +1,361 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from "react";
 import {
-    Search,
-    Plus,
-    Edit2,
-    Trash2,
-    MessageCircle,
-    Users as UsersIcon,
-} from 'lucide-react';
-import TopBar from '../components/TopBar';
-import CustomerModal from '../components/CustomerModal';
-import ConfirmDialog from '../components/ConfirmDialog';
+  Search,
+  Plus,
+  Edit2,
+  Trash2,
+  MessageCircle,
+  Users as UsersIcon,
+} from "lucide-react";
+import TopBar from "../components/TopBar";
+import CustomerModal from "../components/CustomerModal";
+import ConfirmDialog from "../components/ConfirmDialog";
 import {
-    getCustomers,
-    addCustomer,
-    updateCustomer,
-    deleteCustomer,
-} from '../store/customerStore';
+  getCustomers,
+  addCustomer,
+  updateCustomer,
+  deleteCustomer,
+  subscribe,
+} from "../store/customerStore";
 
 const RESTAURANT_LABELS = {
-    cafe: '☕ Cafe',
-    'juice-shop': '🥤 Juice Shop',
-    hotel: '🏨 Hotel',
+  restaurant: "🍽️ Restaurant",
+  cafe: "☕ Cafe",
+  "juice-shop": "🥤 Juice Shop",
+  hotel: "🏨 Hotel",
 };
 
-export default function Customers({ onMenuClick, onDataChange, showToast }) {
-    const [customers, setCustomers] = useState(getCustomers);
-    const [search, setSearch] = useState('');
-    const [filterStatus, setFilterStatus] = useState('all');
-    const [filterPayment, setFilterPayment] = useState('all');
-    const [filterType, setFilterType] = useState('all');
-    const [modalOpen, setModalOpen] = useState(false);
-    const [editingCustomer, setEditingCustomer] = useState(null);
-    const [confirmOpen, setConfirmOpen] = useState(false);
-    const [deleteTarget, setDeleteTarget] = useState(null);
+export default function Customers({ showToast }) {
+  const [customers, setCustomers] = useState(getCustomers);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterPayment, setFilterPayment] = useState("all");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
-    const refresh = useCallback(() => {
-        setCustomers(getCustomers());
-        onDataChange?.();
-    }, [onDataChange]);
-
-    // Filter
-    const filtered = customers.filter(c => {
-        const matchSearch =
-            c.name.toLowerCase().includes(search.toLowerCase()) ||
-            c.whatsapp.includes(search) ||
-            c.location.toLowerCase().includes(search.toLowerCase());
-        const matchStatus = filterStatus === 'all' || c.status === filterStatus;
-        const matchPayment = filterPayment === 'all' || c.paymentStatus === filterPayment;
-        const matchType = filterType === 'all' || c.restaurantType === filterType;
-        return matchSearch && matchStatus && matchPayment && matchType;
+  useEffect(() => {
+    const unsub = subscribe((latest) => {
+      setCustomers([...latest]);
     });
+    return unsub;
+  }, []);
 
-    function handleSave(data) {
-        if (editingCustomer) {
-            updateCustomer(editingCustomer.id, data);
-            showToast('Customer updated successfully', 'success');
-        } else {
-            addCustomer(data);
-            showToast('Customer added successfully', 'success');
-        }
-        setModalOpen(false);
-        setEditingCustomer(null);
-        refresh();
+  const filtered = customers.filter((c) => {
+    const matchSearch =
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.whatsapp.includes(search) ||
+      (c.location || "").toLowerCase().includes(search.toLowerCase());
+    const matchStatus = filterStatus === "all" || c.status === filterStatus;
+    const matchPayment =
+      filterPayment === "all" || c.paymentStatus === filterPayment;
+    return matchSearch && matchStatus && matchPayment;
+  });
+
+  function handleSave(data) {
+    if (editingCustomer) {
+      updateCustomer(editingCustomer.id, data);
+      showToast("Customer updated", "success");
+    } else {
+      addCustomer(data);
+      showToast("Customer added", "success");
     }
+    setModalOpen(false);
+    setEditingCustomer(null);
+  }
 
-    function handleEdit(customer) {
-        setEditingCustomer(customer);
-        setModalOpen(true);
+  function handleEdit(customer) {
+    setEditingCustomer(customer);
+    setModalOpen(true);
+  }
+
+  function handleDeleteClick(customer) {
+    setDeleteTarget(customer);
+    setConfirmOpen(true);
+  }
+
+  function handleDeleteConfirm() {
+    if (deleteTarget) {
+      deleteCustomer(deleteTarget.id);
+      showToast("Customer deleted successfully", "success");
     }
+    setDeleteTarget(null);
+    setConfirmOpen(false);
+  }
 
-    function handleDeleteClick(customer) {
-        setDeleteTarget(customer);
-        setConfirmOpen(true);
-    }
+  function openWhatsApp(number) {
+    const cleaned = number.replace(/[^0-9]/g, "");
+    window.open(`https://wa.me/${cleaned}`, "_blank");
+  }
 
-    function handleDeleteConfirm() {
-        if (deleteTarget) {
-            deleteCustomer(deleteTarget.id);
-            showToast('Customer deleted', 'success');
-            refresh();
-        }
-        setConfirmOpen(false);
-        setDeleteTarget(null);
-    }
+  return (
+    <>
+      <TopBar
+        title="Customers"
+        subtitle={`${filtered.length} total contacts`}
+      />
 
-    function openWhatsApp(number) {
-        const cleaned = number.replace(/[^0-9]/g, '');
-        window.open(`https://wa.me/${cleaned}`, '_blank');
-    }
+      <div className="page-content">
+        {/* Responsive Filter Bar */}
+        <div className="filter-bar">
+          <div className="search-input-wrapper">
+            <Search />
+            <input
+              className="form-input"
+              placeholder="Search by name, number, or location..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
 
-    return (
-        <>
-            <TopBar
-                title="Customers"
-                subtitle={`${filtered.length} of ${customers.length} customers`}
-                onMenuClick={onMenuClick}
+          {/* Scrollable pill filters for mobile, flex for desktop */}
+          <div className="filter-scroll">
+            {/* Status Pills */}
+            <button
+              className={`filter-pill ${filterStatus === "all" ? "active" : ""}`}
+              onClick={() => setFilterStatus("all")}
             >
-                <button
-                    className="btn btn-primary"
-                    onClick={() => {
-                        setEditingCustomer(null);
-                        setModalOpen(true);
-                    }}
-                >
-                    <Plus size={16} />
-                    Add Customer
-                </button>
-            </TopBar>
+              All Status
+            </button>
+            <button
+              className={`filter-pill ${filterStatus === "hot" ? "active" : ""}`}
+              onClick={() => setFilterStatus("hot")}
+            >
+              🔥 Hot Leads
+            </button>
+            <button
+              className={`filter-pill ${filterStatus === "warm" ? "active" : ""}`}
+              onClick={() => setFilterStatus("warm")}
+            >
+              🌡️ Warm
+            </button>
+            <div
+              style={{
+                width: 1,
+                background: "var(--border-color)",
+                margin: "0 4px",
+              }}
+            />
+            {/* Payment Pills */}
+            <button
+              className={`filter-pill ${filterPayment === "all" ? "active" : ""}`}
+              onClick={() => setFilterPayment("all")}
+            >
+              All Payments
+            </button>
+            <button
+              className={`filter-pill ${filterPayment === "pending" ? "active" : ""}`}
+              onClick={() => setFilterPayment("pending")}
+            >
+              ⏳ Pending
+            </button>
+            <button
+              className={`filter-pill ${filterPayment === "paid" ? "active" : ""}`}
+              onClick={() => setFilterPayment("paid")}
+            >
+              ✅ Paid
+            </button>
+          </div>
+        </div>
 
-            <div className="page-content">
-                {/* Filters */}
-                <div className="filter-bar" style={{ marginBottom: 22 }}>
-                    <div className="search-input-wrapper">
-                        <Search />
-                        <input
-                            className="form-input"
-                            placeholder="Search by name, number, or location..."
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                        />
-                    </div>
-                    <select
-                        className="form-select"
-                        value={filterStatus}
-                        onChange={e => setFilterStatus(e.target.value)}
-                        style={{ width: 130 }}
-                    >
-                        <option value="all">All Status</option>
-                        <option value="hot">🔥 Hot</option>
-                        <option value="warm">🌡️ Warm</option>
-                    </select>
-                    <select
-                        className="form-select"
-                        value={filterPayment}
-                        onChange={e => setFilterPayment(e.target.value)}
-                        style={{ width: 150 }}
-                    >
-                        <option value="all">All Payment</option>
-                        <option value="paid">✅ Paid</option>
-                        <option value="pending">⏳ Pending</option>
-                    </select>
-                    <select
-                        className="form-select"
-                        value={filterType}
-                        onChange={e => setFilterType(e.target.value)}
-                        style={{ width: 150 }}
-                    >
-                        <option value="all">All Types</option>
-                        <option value="cafe">☕ Cafe</option>
-                        <option value="juice-shop">🥤 Juice Shop</option>
-                        <option value="hotel">🏨 Hotel</option>
-                    </select>
-                </div>
+        {filtered.length === 0 && (
+          <div className="empty-state">
+            <UsersIcon size={48} />
+            <h4>No customers found</h4>
+            <p>
+              {customers.length === 0
+                ? "Tap the Add Lead icon to start."
+                : "Adjust your search filters."}
+            </p>
+          </div>
+        )}
 
-                {/* Table */}
-                <div className="card">
-                    <div className="table-responsive">
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Customer</th>
-                                    <th>WhatsApp</th>
-                                    <th>Status</th>
-                                    <th>Payment</th>
-                                    <th>Amount</th>
-                                    <th>Location</th>
-                                    <th>Type</th>
-                                    <th>Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filtered.length > 0 ? (
-                                    filtered.map(c => (
-                                        <tr key={c.id}>
-                                            <td>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                    <div
-                                                        style={{
-                                                            width: 34,
-                                                            height: 34,
-                                                            borderRadius: '50%',
-                                                            background: 'var(--accent-primary-soft)',
-                                                            color: 'var(--accent-primary)',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            fontWeight: 700,
-                                                            fontSize: 13,
-                                                            flexShrink: 0,
-                                                        }}
-                                                    >
-                                                        {c.name.charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <span style={{ fontWeight: 600 }}>{c.name}</span>
-                                                </div>
-                                            </td>
-                                            <td style={{ color: 'var(--text-secondary)' }}>{c.whatsapp}</td>
-                                            <td>
-                                                <span className={`badge badge-${c.status}`}>
-                                                    <span className="badge-dot" />
-                                                    {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span className={`badge badge-${c.paymentStatus === 'paid' ? 'paid' : 'pending'}`}>
-                                                    <span className="badge-dot" />
-                                                    {c.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
-                                                </span>
-                                            </td>
-                                            <td style={{ fontWeight: 600 }}>
-                                                ₹{(c.amount || 0).toLocaleString('en-IN')}
-                                            </td>
-                                            <td style={{ color: 'var(--text-secondary)' }}>{c.location}</td>
-                                            <td>
-                                                <span
-                                                    className={`badge badge-${c.restaurantType === 'juice-shop' ? 'juice' : c.restaurantType}`}
-                                                >
-                                                    {RESTAURANT_LABELS[c.restaurantType] || c.restaurantType}
-                                                </span>
-                                            </td>
-                                            <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                                                {new Date(c.createdAt).toLocaleDateString('en-IN', {
-                                                    day: '2-digit',
-                                                    month: 'short',
-                                                    year: 'numeric',
-                                                })}
-                                            </td>
-                                            <td>
-                                                <div className="table-actions">
-                                                    <button
-                                                        className="btn-whatsapp"
-                                                        title="WhatsApp"
-                                                        onClick={() => openWhatsApp(c.whatsapp)}
-                                                    >
-                                                        <MessageCircle />
-                                                    </button>
-                                                    <button
-                                                        className="btn-edit"
-                                                        title="Edit"
-                                                        onClick={() => handleEdit(c)}
-                                                    >
-                                                        <Edit2 />
-                                                    </button>
-                                                    <button
-                                                        className="btn-delete"
-                                                        title="Delete"
-                                                        onClick={() => handleDeleteClick(c)}
-                                                    >
-                                                        <Trash2 />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan={9}>
-                                            <div className="empty-state">
-                                                <UsersIcon size={48} />
-                                                <h4>No customers found</h4>
-                                                <p>
-                                                    {customers.length === 0
-                                                        ? 'Add your first customer to get started'
-                                                        : 'Try adjusting your filters'}
-                                                </p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+        {/* --- MOBILE CARDS VIEW --- */}
+        <div className="customer-grid mobile-only">
+          {filtered.map((c) => (
+            <div key={c.id} className="customer-card">
+              <div className="cc-header">
+                <div className="cc-profile">
+                  <div className="cc-avatar">
+                    {c.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="cc-info">
+                    <h4>{c.name}</h4>
+                    <p>{c.whatsapp}</p>
+                    <div className="cc-badges">
+                      <span className={`badge badge-${c.status}`}>
+                        {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
+                      </span>
+                      <span
+                        className={`badge badge-${c.restaurantType === "juice-shop" ? "juice" : c.restaurantType}`}
+                      >
+                        {RESTAURANT_LABELS[c.restaurantType] ||
+                          c.restaurantType}
+                      </span>
+                      {c.productType && (
+                        <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+                          {c.productType.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                        </span>
+                      )}
                     </div>
+                  </div>
                 </div>
+              </div>
+
+              <div className="cc-details">
+                <div className="cc-amount-col">
+                  <p>Amount Due</p>
+                  <h3
+                    className={c.paymentStatus === "pending" ? "pending" : ""}
+                  >
+                    ₹{(c.amount || 0).toLocaleString("en-IN")}
+                    {c.paymentStatus === "paid" && " ✅"}
+                  </h3>
+                </div>
+                <div className="cc-actions">
+                  <button
+                    className="cc-action-btn btn-whatsapp-solid"
+                    onClick={() => openWhatsApp(c.whatsapp)}
+                  >
+                    <MessageCircle size={16} />
+                  </button>
+                  <button
+                    className="cc-action-btn btn-edit-solid"
+                    onClick={() => handleEdit(c)}
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  <button
+                    className="cc-action-btn btn-edit-solid"
+                    style={{ color: "var(--accent-red)" }}
+                    onClick={() => handleDeleteClick(c)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
             </div>
+          ))}
+        </div>
 
-            <CustomerModal
-                isOpen={modalOpen}
-                onClose={() => {
-                    setModalOpen(false);
-                    setEditingCustomer(null);
-                }}
-                onSave={handleSave}
-                customer={editingCustomer}
-            />
+        {/* --- DESKTOP TABLE VIEW --- */}
+        <div className="desktop-only card">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>WhatsApp</th>
+                <th>Status</th>
+                <th>Payment</th>
+                <th>Amount</th>
+                <th>Type</th>
+                <th>Product</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((c) => (
+                <tr key={c.id}>
+                  <td>
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 10 }}
+                    >
+                      <div
+                        className="cc-avatar"
+                        style={{ width: 32, height: 32, fontSize: 13 }}
+                      >
+                        {c.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span style={{ fontWeight: 600 }}>{c.name}</span>
+                    </div>
+                  </td>
+                  <td style={{ color: "var(--text-secondary)" }}>
+                    {c.whatsapp}
+                  </td>
+                  <td>
+                    <span className={`badge badge-${c.status}`}>
+                      <span className="badge-dot" />
+                      {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className={`badge badge-${c.paymentStatus === "paid" ? "paid" : "pending"}`}
+                    >
+                      <span className="badge-dot" />
+                      {c.paymentStatus === "paid" ? "Paid" : "Pending"}
+                    </span>
+                  </td>
+                  <td style={{ fontWeight: 600 }}>
+                    ₹{(c.amount || 0).toLocaleString("en-IN")}
+                  </td>
+                  <td>
+                    <span
+                      className={`badge badge-${c.restaurantType === "juice-shop" ? "juice" : c.restaurantType}`}
+                    >
+                      {RESTAURANT_LABELS[c.restaurantType] || c.restaurantType}
+                    </span>
+                  </td>
+                  <td>
+                    {c.productType && (
+                      <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+                        {c.productType.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        className="cc-action-btn btn-whatsapp-solid"
+                        onClick={() => openWhatsApp(c.whatsapp)}
+                      >
+                        <MessageCircle size={14} />
+                      </button>
+                      <button
+                        className="cc-action-btn btn-edit-solid"
+                        onClick={() => handleEdit(c)}
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button
+                        className="cc-action-btn btn-edit-solid"
+                        style={{ color: "var(--accent-red)" }}
+                        onClick={() => handleDeleteClick(c)}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-            <ConfirmDialog
-                isOpen={confirmOpen}
-                onClose={() => {
-                    setConfirmOpen(false);
-                    setDeleteTarget(null);
-                }}
-                onConfirm={handleDeleteConfirm}
-                title="Delete Customer"
-                message={
-                    deleteTarget
-                        ? <>Are you sure you want to delete <strong>{deleteTarget.name}</strong>? This cannot be undone.</>
-                        : 'Are you sure?'
-                }
-            />
-        </>
-    );
+      <CustomerModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingCustomer(null);
+        }}
+        onSave={handleSave}
+        customer={editingCustomer}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => {
+          setConfirmOpen(false);
+          setDeleteTarget(null);
+        }}
+        onConfirm={() => {
+          handleDeleteConfirm();
+          setConfirmOpen(false);
+        }}
+        title="Delete Customer"
+      />
+    </>
+  );
 }

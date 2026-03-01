@@ -5,7 +5,12 @@ import Toast from './components/Toast';
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
 import CustomerModal from './components/CustomerModal';
-import { getCustomers, addCustomer, seedDemoData } from './store/customerStore';
+import {
+  getCustomers,
+  addCustomer,
+  subscribe,
+  hydrate,
+} from './store/customerStore';
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -15,9 +20,17 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Seed demo data on first load
+  // Subscribe to store changes → auto-refresh UI
   useEffect(() => {
-    seedDemoData();
+    const unsub = subscribe(() => {
+      setRefreshKey(k => k + 1);
+    });
+    return unsub;
+  }, []);
+
+  // Hydrate from D1 on app start
+  useEffect(() => {
+    hydrate();
   }, []);
 
   const pendingCount = getCustomers().filter(c => c.paymentStatus === 'pending').length;
@@ -31,16 +44,11 @@ export default function App() {
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  const triggerRefresh = useCallback(() => {
-    setRefreshKey(k => k + 1);
-  }, []);
-
-  // Handle "Add Customer" from sidebar
+  // Handle "Add Customer" from sidebar nav
   function handleAddFromSidebar(data) {
     addCustomer(data);
     showToast('Customer added successfully', 'success');
     setAddModalOpen(false);
-    triggerRefresh();
     navigate('/customers');
   }
 
@@ -76,7 +84,6 @@ export default function App() {
               <Customers
                 key={refreshKey}
                 onMenuClick={() => setSidebarOpen(true)}
-                onDataChange={triggerRefresh}
                 showToast={showToast}
               />
             }
@@ -87,7 +94,6 @@ export default function App() {
               <Customers
                 key={refreshKey}
                 onMenuClick={() => setSidebarOpen(true)}
-                onDataChange={triggerRefresh}
                 showToast={showToast}
               />
             }

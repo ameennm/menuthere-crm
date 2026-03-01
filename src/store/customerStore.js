@@ -1,11 +1,22 @@
-// LocalStorage-based store — easy to swap with backend API later
+// ============================================================
+// Customer Store — Optimistic UI + Background D1 Sync
+// 
+// How it works:
+// 1. Local state (in-memory + localStorage) is the source of truth for the UI
+// 2. Every mutation instantly updates local state → UI re-renders immediately
+// 3. API call fires in the background to sync with D1
+// 4. On app load, we fetch from D1 to hydrate local state
+// ============================================================
+
+import { customerAPI, dashboardAPI } from './api';
+
 const STORAGE_KEY = 'menuthere_customers';
+let listeners = [];
+let customers = loadLocal();
+let isHydrated = false;
 
-function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
-}
-
-export function getCustomers() {
+// ---- Local persistence ----
+function loadLocal() {
     try {
         const data = localStorage.getItem(STORAGE_KEY);
         return data ? JSON.parse(data) : [];
@@ -14,55 +25,119 @@ export function getCustomers() {
     }
 }
 
-export function saveCustomers(customers) {
+function saveLocal() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
 }
 
-export function addCustomer(customer) {
-    const customers = getCustomers();
-    const newCustomer = {
-        ...customer,
-        id: generateId(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+// ---- Reactive subscriptions ----
+export function subscribe(fn) {
+    listeners.push(fn);
+    return () => {
+        listeners = listeners.filter(l => l !== fn);
     };
-    customers.push(newCustomer);
-    saveCustomers(customers);
+}
+
+function notify() {
+    saveLocal();
+    listeners.forEach(fn => fn(customers));
+}
+
+// ---- Generate ID ----
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+}
+
+export async function hydrate() {
+    if (isHydrated) return;
+    try {
+        const remote = await customerAPI.getAll();
+        if (Array.isArray(remote)) { // Overwrite even if empty so DB is the absolute source of truth
+            customers = remote;
+            notify();
+        }
+        isHydrated = true;
+    } catch (err) {
+        console.warn('Could not fetch from API, using local data:', err.message);
+        isHydrated = true; // continue with local data
+    }
+}
+
+// ---- CRUD (optimistic) ----
+
+export function getCustomers() {
+    return [...customers];
+}
+
+export function addCustomer(data) {
+    const now = new Date().toISOString();
+    const newCustomer = {
+        ...data,
+        id: generateId(),
+        createdAt: now,
+        updatedAt: now,
+    };
+
+    // 1. Instant local update
+    customers = [newCustomer, ...customers];
+    notify();
+
+    // 2. Background sync
+    customerAPI.create(data).then(remote => {
+        // Replace temp record with server record (gets server ID)
+        customers = customers.map(c => c.id === newCustomer.id ? { ...remote } : c);
+        saveLocal();
+    }).catch(err => {
+        console.error('Background sync failed (create):', err);
+    });
+
     return newCustomer;
 }
 
 export function updateCustomer(id, updates) {
-    const customers = getCustomers();
-    const index = customers.findIndex(c => c.id === id);
-    if (index === -1) return null;
-    customers[index] = {
-        ...customers[index],
-        ...updates,
-        updatedAt: new Date().toISOString(),
-    };
-    saveCustomers(customers);
-    return customers[index];
+    // 1. Instant local update
+    const now = new Date().toISOString();
+    let updated = null;
+    customers = customers.map(c => {
+        if (c.id === id) {
+            updated = { ...c, ...updates, updatedAt: now };
+            return updated;
+        }
+        return c;
+    });
+    notify();
+
+    // 2. Background sync
+    customerAPI.update(id, updates).catch(err => {
+        console.error('Background sync failed (update):', err);
+    });
+
+    return updated;
 }
 
 export function deleteCustomer(id) {
-    const customers = getCustomers();
-    const filtered = customers.filter(c => c.id !== id);
-    saveCustomers(filtered);
-    return filtered;
+    // 1. Instant local removal
+    customers = customers.filter(c => c.id !== id);
+    notify();
+
+    // 2. Background sync
+    customerAPI.delete(id).catch(err => {
+        console.error('Background sync failed (delete):', err);
+    });
+
+    return customers;
 }
 
 export function getCustomerById(id) {
-    const customers = getCustomers();
     return customers.find(c => c.id === id) || null;
 }
 
-// ========== Dashboard helpers ==========
+// ---- Dashboard helpers (work on local data for instant results) ----
 
 export function getFilteredCustomers(dateRange, customFrom, customTo) {
-    const customers = getCustomers();
     const now = new Date();
+    const all = getCustomers();
 
-    if (dateRange === 'all') return customers;
+    if (dateRange === 'all') return all;
 
     let startDate;
     if (dateRange === 'today') {
@@ -77,14 +152,14 @@ export function getFilteredCustomers(dateRange, customFrom, customTo) {
         startDate = new Date(customFrom);
         const endDate = new Date(customTo);
         endDate.setHours(23, 59, 59, 999);
-        return customers.filter(c => {
+        return all.filter(c => {
             const d = new Date(c.createdAt);
             return d >= startDate && d <= endDate;
         });
     }
 
-    if (!startDate) return customers;
-    return customers.filter(c => new Date(c.createdAt) >= startDate);
+    if (!startDate) return all;
+    return all.filter(c => new Date(c.createdAt) >= startDate);
 }
 
 export function getDashboardStats(dateRange, customFrom, customTo) {
@@ -105,8 +180,8 @@ export function getDashboardStats(dateRange, customFrom, customTo) {
     const warmLeads = filtered.filter(c => c.status === 'warm').length;
     const totalCustomers = filtered.length;
 
-    // Restaurant type breakdown
     const byRestaurant = {
+        restaurant: filtered.filter(c => c.restaurantType === 'restaurant').length,
         cafe: filtered.filter(c => c.restaurantType === 'cafe').length,
         'juice-shop': filtered.filter(c => c.restaurantType === 'juice-shop').length,
         hotel: filtered.filter(c => c.restaurantType === 'hotel').length,
@@ -120,7 +195,7 @@ export function getDashboardStats(dateRange, customFrom, customTo) {
         const dayStr = date.toISOString().split('T')[0];
         const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
         const daySales = all
-            .filter(c => c.paymentStatus === 'paid' && c.createdAt.startsWith(dayStr))
+            .filter(c => c.paymentStatus === 'paid' && c.createdAt && c.createdAt.startsWith(dayStr))
             .reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
         dailySales.push({ date: dayLabel, sales: daySales });
     }
@@ -144,37 +219,3 @@ export function getDashboardStats(dateRange, customFrom, customTo) {
     };
 }
 
-// Seed demo data if empty
-export function seedDemoData() {
-    if (getCustomers().length > 0) return;
-
-    const names = [
-        'Rahul Sharma', 'Priya Patel', 'Arjun Nair', 'Meera Reddy', 'Vikram Singh',
-        'Anita Desai', 'Kiran Kumar', 'Sneha Gupta', 'Raj Malhotra', 'Deepa Iyer',
-        'Anil Kapoor', 'Fatima Khan', 'Suresh Menon', 'Lakshmi Rao', 'Omar Sheikh',
-    ];
-    const locations = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Pune', 'Hyderabad', 'Kochi', 'Jaipur'];
-    const types = ['cafe', 'juice-shop', 'hotel'];
-    const statuses = ['hot', 'warm'];
-    const payments = ['paid', 'pending'];
-
-    const demoCustomers = names.map((name, i) => {
-        const daysAgo = Math.floor(Math.random() * 14);
-        const created = new Date();
-        created.setDate(created.getDate() - daysAgo);
-        return {
-            id: generateId() + i,
-            name,
-            whatsapp: `+91 ${9000000000 + Math.floor(Math.random() * 999999999)}`,
-            status: statuses[Math.floor(Math.random() * statuses.length)],
-            paymentStatus: payments[Math.floor(Math.random() * payments.length)],
-            amount: (Math.floor(Math.random() * 50) + 5) * 100,
-            location: locations[Math.floor(Math.random() * locations.length)],
-            restaurantType: types[Math.floor(Math.random() * types.length)],
-            createdAt: created.toISOString(),
-            updatedAt: created.toISOString(),
-        };
-    });
-
-    saveCustomers(demoCustomers);
-}

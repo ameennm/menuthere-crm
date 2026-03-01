@@ -1,0 +1,8 @@
+name = "menuthere-crm-api"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "menuthere_db"
+database_id = "778e6779-5ea1-4341-a15f-b4e9d0d5b760"

@@ -1,27 +1,18 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import {
-    LayoutDashboard,
-    Users,
-    UserPlus,
-    X,
-} from 'lucide-react';
+import { LayoutDashboard, Users, UserPlus } from 'lucide-react';
 
-const navItems = [
-    { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/customers', icon: Users, label: 'Customers' },
-    { path: '/customers/new', icon: UserPlus, label: 'Add Customer' },
-];
-
-export default function Sidebar({ isOpen, onClose, pendingCount }) {
+export default function Sidebar({ pendingCount }) {
     const location = useLocation();
+
+    const navItems = [
+        { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
+        { path: '/customers', icon: Users, label: 'Customers' },
+    ];
 
     return (
         <>
-            <div
-                className={`sidebar-overlay ${isOpen ? 'open' : ''}`}
-                onClick={onClose}
-            />
-            <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+            {/* --- DESKTOP SIDEBAR --- */}
+            <aside className="sidebar">
                 <div className="sidebar-header">
                     <div className="sidebar-logo">
                         <div className="sidebar-logo-icon">MT</div>
@@ -33,22 +24,22 @@ export default function Sidebar({ isOpen, onClose, pendingCount }) {
                 </div>
 
                 <nav className="sidebar-nav">
-                    <div className="nav-label">Main</div>
+                    <div style={{ paddingLeft: 16, fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+                        Main
+                    </div>
                     {navItems.map(item => {
                         const Icon = item.icon;
-                        const isActive =
-                            item.path === '/'
-                                ? location.pathname === '/'
-                                : location.pathname.startsWith(item.path) && item.path !== '/';
+                        const isActive = item.path === '/'
+                            ? location.pathname === '/'
+                            : location.pathname.startsWith(item.path) && item.path !== '/';
 
                         return (
                             <NavLink
                                 key={item.path}
                                 to={item.path}
-                                className={`nav-link ${isActive ? 'active' : ''}`}
-                                onClick={onClose}
+                                className={`desktop-nav-link ${isActive ? 'active' : ''}`}
                             >
-                                <Icon />
+                                <Icon size={20} />
                                 <span>{item.label}</span>
                                 {item.label === 'Customers' && pendingCount > 0 && (
                                     <span className="nav-badge">{pendingCount}</span>
@@ -57,21 +48,31 @@ export default function Sidebar({ isOpen, onClose, pendingCount }) {
                         );
                     })}
                 </nav>
-
-                {/* Close button on mobile */}
-                <button
-                    className="modal-close"
-                    onClick={onClose}
-                    style={{
-                        position: 'absolute',
-                        top: 16,
-                        right: 16,
-                        display: 'none',
-                    }}
-                >
-                    <X size={18} />
-                </button>
             </aside>
+
+            {/* --- MOBILE BOTTOM NAV --- */}
+            <nav className="bottom-nav">
+                {navItems.map(item => {
+                    const Icon = item.icon;
+                    const isActive = item.path === '/'
+                        ? location.pathname === '/'
+                        : location.pathname.startsWith(item.path) && item.path !== '/';
+
+                    return (
+                        <NavLink
+                            key={item.path}
+                            to={item.path}
+                            className={`nav-item ${isActive ? 'active' : ''}`}
+                        >
+                            <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                            <span>{item.label}</span>
+                            {item.label === 'Customers' && pendingCount > 0 && (
+                                <span className="nav-badge-float">{pendingCount}</span>
+                            )}
+                        </NavLink>
+                    );
+                })}
+            </nav>
         </>
     );
 }

@@ -1,18 +1,11 @@
-import { Menu } from 'lucide-react';
-
-export default function TopBar({ title, subtitle, onMenuClick, children }) {
+export default function TopBar({ title, subtitle, children }) {
     return (
         <div className="topbar">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <button className="menu-toggle" onClick={onMenuClick}>
-                    <Menu size={22} />
-                </button>
-                <div className="topbar-left">
-                    <h2>{title}</h2>
-                    {subtitle && <p>{subtitle}</p>}
-                </div>
+            <div className="topbar-left">
+                <h2>{title}</h2>
+                {subtitle && <p>{subtitle}</p>}
             </div>
-            <div className="topbar-actions">
+            <div>
                 {children}
             </div>
         </div>
