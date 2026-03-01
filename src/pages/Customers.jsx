@@ -194,8 +194,17 @@ export default function Customers({ showToast }) {
                           c.restaurantType}
                       </span>
                       {c.productType && (
-                        <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
-                          {c.productType.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                        <span
+                          className="badge"
+                          style={{
+                            background: "var(--bg-secondary)",
+                            color: "var(--text-primary)",
+                          }}
+                        >
+                          {c.productType
+                            .split("-")
+                            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                            .join(" ")}
                         </span>
                       )}
                     </div>
@@ -299,8 +308,17 @@ export default function Customers({ showToast }) {
                   </td>
                   <td>
                     {c.productType && (
-                      <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
-                        {c.productType.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                      <span
+                        className="badge"
+                        style={{
+                          background: "var(--bg-secondary)",
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        {c.productType
+                          .split("-")
+                          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                          .join(" ")}
                       </span>
                     )}
                   </td>
