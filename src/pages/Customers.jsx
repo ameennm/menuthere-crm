@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   Search,
+  Plus,
   Edit2,
   Trash2,
   MessageCircle,
@@ -114,7 +115,18 @@ export default function Customers({ showToast, onRefresh }) {
         title="Customers"
         subtitle={`${filtered.length} total contacts`}
         onRefresh={onRefresh}
-      />
+      >
+        <button
+          className="btn btn-primary btn-sm"
+          style={{ padding: "10px 14px", borderRadius: 50 }}
+          onClick={() => {
+            setEditingCustomer(null);
+            setModalOpen(true);
+          }}
+        >
+          <Plus size={18} /> <span className="desktop-only">Add Customer</span>
+        </button>
+      </TopBar>
 
       <div className="page-content">
         {/* Responsive Filter Bar */}
