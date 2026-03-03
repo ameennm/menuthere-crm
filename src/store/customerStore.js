@@ -186,24 +186,39 @@ export function getDashboardStats(dateRange, customFrom, customTo) {
   const all = getCustomers();
 
   // Exclude not-interested: they are lost leads, don't count in financials
-  const active = (c) => c.status !== 'not-interested';
+  const active = (c) => c.status !== "not-interested";
+
+  // Helper: if status is paid but paidAmount is 0/null (legacy data), use total amount
+  const getPaidAmount = (c) => {
+    const p = parseFloat(c.paidAmount) || 0;
+    if (c.paymentStatus === "paid" && p === 0) {
+      return parseFloat(c.amount) || 0;
+    }
+    return p;
+  };
 
   const totalSales = filtered
     .filter((c) => active(c))
-    .reduce((sum, c) => sum + (parseFloat(c.paidAmount) || 0), 0);
+    .reduce((sum, c) => sum + getPaidAmount(c), 0);
 
   const totalPending = all
     .filter((c) => active(c) && c.paymentStatus === "pending")
     .reduce((sum, c) => {
-      const pending = (parseFloat(c.amount) || 0) - (parseFloat(c.paidAmount) || 0);
+      const pending = (parseFloat(c.amount) || 0) - getPaidAmount(c);
       return sum + (pending > 0 ? pending : 0);
     }, 0);
 
-  const pendingCount = all.filter((c) => active(c) && c.paymentStatus === "pending").length;
-  const paidCount = filtered.filter((c) => active(c) && c.paymentStatus === "paid").length;
+  const pendingCount = all.filter(
+    (c) => active(c) && c.paymentStatus === "pending",
+  ).length;
+  const paidCount = filtered.filter(
+    (c) => active(c) && c.paymentStatus === "paid",
+  ).length;
   const hotLeads = filtered.filter((c) => c.status === "hot").length;
   const warmLeads = filtered.filter((c) => c.status === "warm").length;
-  const lostLeads = filtered.filter((c) => c.status === "not-interested").length;
+  const lostLeads = filtered.filter(
+    (c) => c.status === "not-interested",
+  ).length;
   const totalCustomers = filtered.filter(active).length;
 
   const byRestaurant = {
@@ -227,19 +242,16 @@ export function getDashboardStats(dateRange, customFrom, customTo) {
       day: "numeric",
     });
     const daySales = all
-      .filter(
-        (c) =>
-          active(c) &&
-          c.createdAt &&
-          c.createdAt.startsWith(dayStr),
-      )
-      .reduce((sum, c) => sum + (parseFloat(c.paidAmount) || 0), 0);
+      .filter((c) => active(c) && c.createdAt && c.createdAt.startsWith(dayStr))
+      .reduce((sum, c) => sum + getPaidAmount(c), 0);
     dailySales.push({ date: dayLabel, sales: daySales });
   }
 
   // Pending payments list — exclude not-interested
   const pendingPayments = all
-    .filter((c) => c.status !== 'not-interested' && c.paymentStatus === "pending")
+    .filter(
+      (c) => c.status !== "not-interested" && c.paymentStatus === "pending",
+    )
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   return {

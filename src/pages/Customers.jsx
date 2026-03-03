@@ -33,9 +33,12 @@ const STATUS_LABELS = {
 };
 
 const STATUS_BADGE_STYLE = {
-  "not-interested": { background: "#2a1a1a", color: "#f87171", border: "1px solid #f87171" },
+  "not-interested": {
+    background: "#2a1a1a",
+    color: "#f87171",
+    border: "1px solid #f87171",
+  },
 };
-
 
 export default function Customers({ showToast, onRefresh }) {
   const [customers, setCustomers] = useState(getCustomers);
@@ -167,7 +170,12 @@ export default function Customers({ showToast, onRefresh }) {
             <button
               className={`filter-pill ${filterStatus === "not-interested" ? "active" : ""}`}
               onClick={() => setFilterStatus("not-interested")}
-              style={{ color: filterStatus === "not-interested" ? undefined : "var(--text-secondary)" }}
+              style={{
+                color:
+                  filterStatus === "not-interested"
+                    ? undefined
+                    : "var(--text-secondary)",
+              }}
             >
               👎 Not Interested
             </button>
@@ -260,34 +268,80 @@ export default function Customers({ showToast, onRefresh }) {
 
               <div className="cc-details">
                 <div className="cc-amount-col">
-                  <p>{c.paymentStatus === "paid" ? "Paid fully" : "Pending due"}</p>
+                  <p>
+                    {c.paymentStatus === "paid" ? "Paid fully" : "Pending due"}
+                  </p>
                   <h3
                     className={c.paymentStatus === "pending" ? "pending" : ""}
                   >
-                    ₹{(c.paymentStatus === "paid" ? (c.amount || 0) : ((c.amount || 0) - (c.paidAmount || 0))).toLocaleString("en-IN")}
+                    ₹
+                    {(c.paymentStatus === "paid"
+                      ? c.amount || 0
+                      : (c.amount || 0) - (c.paidAmount || 0)
+                    ).toLocaleString("en-IN")}
                     {c.paymentStatus === "paid" && " ✅"}
                   </h3>
                   {c.paymentStatus === "pending" && c.paidAmount > 0 && (
-                    <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
-                      Paid: ₹{(c.paidAmount || 0).toLocaleString("en-IN")} / Total: ₹{(c.amount || 0).toLocaleString("en-IN")}
+                    <p
+                      style={{
+                        fontSize: 11,
+                        color: "var(--text-secondary)",
+                        marginTop: 2,
+                      }}
+                    >
+                      Paid: ₹{(c.paidAmount || 0).toLocaleString("en-IN")} /
+                      Total: ₹{(c.amount || 0).toLocaleString("en-IN")}
                     </p>
                   )}
                 </div>
                 {(c.nextCallDate || c.callNotes) && (
-                  <div style={{ width: "100%", marginTop: 8, padding: "8px 0", borderTop: "1px solid var(--border-color)" }}>
+                  <div
+                    style={{
+                      width: "100%",
+                      marginTop: 8,
+                      padding: "8px 0",
+                      borderTop: "1px solid var(--border-color)",
+                    }}
+                  >
                     {c.nextCallDate && (
-                      <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 4 }}>
+                      <p
+                        style={{
+                          fontSize: 12,
+                          color: "var(--text-secondary)",
+                          marginBottom: 4,
+                        }}
+                      >
                         📅 <strong>Next Call:</strong>{" "}
-                        {new Date(c.nextCallDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                        {c.nextCallDate.includes("T") && !c.nextCallDate.endsWith("T00:00") && (
-                          <span style={{ marginLeft: 6, color: "#60a5fa" }}>
-                            ⏰ {new Date(c.nextCallDate).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
-                          </span>
-                        )}
+                        {new Date(c.nextCallDate).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                        {c.nextCallDate.includes("T") &&
+                          !c.nextCallDate.endsWith("T00:00") && (
+                            <span style={{ marginLeft: 6, color: "#60a5fa" }}>
+                              ⏰{" "}
+                              {new Date(c.nextCallDate).toLocaleTimeString(
+                                "en-IN",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                },
+                              )}
+                            </span>
+                          )}
                       </p>
                     )}
                     {c.callNotes && (
-                      <p style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                      <p
+                        style={{
+                          fontSize: 12,
+                          color: "var(--text-secondary)",
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                        }}
+                      >
                         📝 {c.callNotes}
                       </p>
                     )}
@@ -296,20 +350,29 @@ export default function Customers({ showToast, onRefresh }) {
                 <div className="cc-actions">
                   <button
                     className="cc-action-btn btn-whatsapp-solid"
-                    onClick={(e) => { e.stopPropagation(); openWhatsApp(c.whatsapp); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openWhatsApp(c.whatsapp);
+                    }}
                   >
                     <MessageCircle size={16} />
                   </button>
                   <button
                     className="cc-action-btn btn-edit-solid"
-                    onClick={(e) => { e.stopPropagation(); handleEdit(c); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(c);
+                    }}
                   >
                     <Edit2 size={16} />
                   </button>
                   <button
                     className="cc-action-btn btn-edit-solid"
                     style={{ color: "var(--accent-red)" }}
-                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(c); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(c);
+                    }}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -374,11 +437,30 @@ export default function Customers({ showToast, onRefresh }) {
                     </span>
                   </td>
                   <td>
-                    <div style={{ fontWeight: 600, color: c.paymentStatus === "paid" ? "var(--text-primary)" : "#fb923c" }}>
-                      ₹{(c.paymentStatus === "paid" ? (c.amount || 0) : ((c.amount || 0) - (c.paidAmount || 0))).toLocaleString("en-IN")}
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        color:
+                          c.paymentStatus === "paid"
+                            ? "var(--text-primary)"
+                            : "#fb923c",
+                      }}
+                    >
+                      ₹
+                      {(c.paymentStatus === "paid"
+                        ? c.amount || 0
+                        : (c.amount || 0) - (c.paidAmount || 0)
+                      ).toLocaleString("en-IN")}
                     </div>
                     {c.paymentStatus === "pending" && c.paidAmount > 0 && (
-                      <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2, fontWeight: 500 }}>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: "var(--text-secondary)",
+                          marginTop: 2,
+                          fontWeight: 500,
+                        }}
+                      >
                         (Total: ₹{(c.amount || 0).toLocaleString("en-IN")})
                       </div>
                     )}
@@ -409,38 +491,87 @@ export default function Customers({ showToast, onRefresh }) {
                   <td style={{ color: "var(--text-secondary)", fontSize: 13 }}>
                     {c.nextCallDate ? (
                       <span>
-                        {new Date(c.nextCallDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                        {c.nextCallDate.includes("T") && !c.nextCallDate.endsWith("T00:00") && (
-                          <span style={{ display: "block", color: "#60a5fa", fontSize: 11 }}>
-                            ⏰ {new Date(c.nextCallDate).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
-                          </span>
-                        )}
+                        {new Date(c.nextCallDate).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                        {c.nextCallDate.includes("T") &&
+                          !c.nextCallDate.endsWith("T00:00") && (
+                            <span
+                              style={{
+                                display: "block",
+                                color: "#60a5fa",
+                                fontSize: 11,
+                              }}
+                            >
+                              ⏰{" "}
+                              {new Date(c.nextCallDate).toLocaleTimeString(
+                                "en-IN",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                },
+                              )}
+                            </span>
+                          )}
                       </span>
-                    ) : <span style={{ opacity: 0.4 }}>—</span>}
+                    ) : (
+                      <span style={{ opacity: 0.4 }}>—</span>
+                    )}
                   </td>
-                  <td style={{ color: "var(--text-secondary)", fontSize: 13, maxWidth: 200 }}>
-                    {c.callNotes
-                      ? <span title={c.callNotes} style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 180 }}>{c.callNotes}</span>
-                      : <span style={{ opacity: 0.4 }}>—</span>}
+                  <td
+                    style={{
+                      color: "var(--text-secondary)",
+                      fontSize: 13,
+                      maxWidth: 200,
+                    }}
+                  >
+                    {c.callNotes ? (
+                      <span
+                        title={c.callNotes}
+                        style={{
+                          display: "block",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          maxWidth: 180,
+                        }}
+                      >
+                        {c.callNotes}
+                      </span>
+                    ) : (
+                      <span style={{ opacity: 0.4 }}>—</span>
+                    )}
                   </td>
                   <td>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button
                         className="cc-action-btn btn-whatsapp-solid"
-                        onClick={(e) => { e.stopPropagation(); openWhatsApp(c.whatsapp); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openWhatsApp(c.whatsapp);
+                        }}
                       >
                         <MessageCircle size={14} />
                       </button>
                       <button
                         className="cc-action-btn btn-edit-solid"
-                        onClick={(e) => { e.stopPropagation(); handleEdit(c); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(c);
+                        }}
                       >
                         <Edit2 size={14} />
                       </button>
                       <button
                         className="cc-action-btn btn-edit-solid"
                         style={{ color: "var(--accent-red)" }}
-                        onClick={(e) => { e.stopPropagation(); handleDeleteClick(c); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClick(c);
+                        }}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -456,20 +587,32 @@ export default function Customers({ showToast, onRefresh }) {
       <CustomerDetailModal
         customer={viewingCustomer}
         onClose={() => setViewingCustomer(null)}
-        onEdit={(c) => { setViewingCustomer(null); handleEdit(c); }}
+        onEdit={(c) => {
+          setViewingCustomer(null);
+          handleEdit(c);
+        }}
       />
 
       <CustomerModal
         isOpen={modalOpen}
-        onClose={() => { setModalOpen(false); setEditingCustomer(null); }}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingCustomer(null);
+        }}
         onSave={handleSave}
         customer={editingCustomer}
       />
 
       <ConfirmDialog
         isOpen={confirmOpen}
-        onClose={() => { setConfirmOpen(false); setDeleteTarget(null); }}
-        onConfirm={() => { handleDeleteConfirm(); setConfirmOpen(false); }}
+        onClose={() => {
+          setConfirmOpen(false);
+          setDeleteTarget(null);
+        }}
+        onConfirm={() => {
+          handleDeleteConfirm();
+          setConfirmOpen(false);
+        }}
         title="Delete Customer"
       />
     </>

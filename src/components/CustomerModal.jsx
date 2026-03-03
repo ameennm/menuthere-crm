@@ -26,8 +26,6 @@ function getDefaultForm() {
   };
 }
 
-
-
 export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
   const [form, setForm] = useState(getDefaultForm);
   const isEdit = !!customer;
@@ -136,7 +134,9 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
               />
             </div>
             <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-              <label className="form-label">📝 What They Said / Call Notes</label>
+              <label className="form-label">
+                📝 What They Said / Call Notes
+              </label>
               <textarea
                 className="form-input"
                 name="callNotes"
@@ -147,7 +147,13 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
                 style={{ resize: "vertical", minHeight: 72 }}
               />
             </div>
-            <div className="form-group" style={{ gridColumn: form.status === "not-interested" ? "1 / -1" : undefined }}>
+            <div
+              className="form-group"
+              style={{
+                gridColumn:
+                  form.status === "not-interested" ? "1 / -1" : undefined,
+              }}
+            >
               <label className="form-label">Lead Status</label>
               <select
                 className="form-select"
@@ -162,7 +168,9 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
             </div>
             {form.status === "not-interested" && (
               <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-                <label className="form-label">🚫 Reason for Not Interested</label>
+                <label className="form-label">
+                  🚫 Reason for Not Interested
+                </label>
                 <textarea
                   className="form-input"
                   name="notInterestedReason"
@@ -191,7 +199,15 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
                 <option value="pending">⏳ Pending</option>
               </select>
             </div>
-            <div className="form-group" style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+            <div
+              className="form-group"
+              style={{
+                gridColumn: "1 / -1",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr",
+                gap: 16,
+              }}
+            >
               <div>
                 <label className="form-label">Total Amount (₹)</label>
                 <input
@@ -218,17 +234,24 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
               </div>
               <div>
                 <label className="form-label">Pending Amount (₹)</label>
-                <div style={{
-                  padding: "9px 12px",
-                  background: "var(--bg-secondary)",
-                  border: "1px solid var(--border-color)",
-                  borderRadius: 10,
-                  color: pendingAmount > 0 ? "#fb923c" : pendingAmount < 0 ? "#34d399" : "var(--text-secondary)",
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  height: 40
-                }}>
+                <div
+                  style={{
+                    padding: "9px 12px",
+                    background: "var(--bg-secondary)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: 10,
+                    color:
+                      pendingAmount > 0
+                        ? "#fb923c"
+                        : pendingAmount < 0
+                          ? "#34d399"
+                          : "var(--text-secondary)",
+                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    height: 40,
+                  }}
+                >
                   ₹{pendingAmount.toLocaleString("en-IN")}
                 </div>
               </div>
