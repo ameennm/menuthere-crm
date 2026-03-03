@@ -2,17 +2,25 @@ import { useState, useEffect } from "react";
 import { Bell, CheckCircle2, CalendarClock, RefreshCw, MessageCircle } from "lucide-react";
 import TopBar from "../components/TopBar";
 import DateTimePicker from "../components/DateTimePicker";
+import CustomerDetailModal from "../components/CustomerDetailModal";
 import { getCustomers, updateCustomer, subscribe } from "../store/customerStore";
 
 function classifyCall(dateStr) {
     if (!dateStr) return null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
     const callDate = new Date(dateStr);
-    callDate.setHours(0, 0, 0, 0);
-    const diff = (callDate - today) / (1000 * 60 * 60 * 24);
-    if (diff < 0) return "overdue";
-    if (diff === 0) return "today";
+
+    // Overdue = the exact scheduled moment has already passed
+    if (callDate < now) return "overdue";
+
+    // Future calls — compare at day level only
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const callDay = new Date(callDate);
+    callDay.setHours(0, 0, 0, 0);
+    const diff = (callDay - todayStart) / (1000 * 60 * 60 * 24);
+
+    if (diff === 0) return "today";   // same day, time not yet reached
     if (diff <= 3) return "soon";
     return "upcoming";
 }
@@ -29,6 +37,7 @@ export default function Reminders({ showToast, preFilter = "all", onRefresh }) {
     const [rescheduleTarget, setRescheduleTarget] = useState(null);
     const [newDate, setNewDate] = useState("");
     const [filterType, setFilterType] = useState(preFilter);
+    const [viewingCustomer, setViewingCustomer] = useState(null);
 
     // When navigating between /reminders and /missed, reset filter
     useEffect(() => { setFilterType(preFilter); }, [preFilter]);
@@ -173,7 +182,9 @@ export default function Reminders({ showToast, preFilter = "all", onRefresh }) {
                                     display: "flex",
                                     flexDirection: "column",
                                     gap: 10,
+                                    cursor: "pointer",
                                 }}
+                                onClick={() => setViewingCustomer(c)}
                             >
                                 {/* Top row */}
                                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
@@ -216,21 +227,21 @@ export default function Reminders({ showToast, preFilter = "all", onRefresh }) {
                                     <button
                                         className="btn btn-primary"
                                         style={{ fontSize: 12, padding: "6px 14px", display: "flex", alignItems: "center", gap: 6 }}
-                                        onClick={() => handleComplete(c)}
+                                        onClick={(e) => { e.stopPropagation(); handleComplete(c); }}
                                     >
                                         <CheckCircle2 size={14} /> Done
                                     </button>
                                     <button
                                         className="btn btn-secondary"
                                         style={{ fontSize: 12, padding: "6px 14px", display: "flex", alignItems: "center", gap: 6 }}
-                                        onClick={() => openReschedule(c)}
+                                        onClick={(e) => { e.stopPropagation(); openReschedule(c); }}
                                     >
                                         <RefreshCw size={14} /> Reschedule
                                     </button>
                                     <button
                                         className="cc-action-btn btn-whatsapp-solid"
                                         style={{ fontSize: 12, padding: "6px 14px", display: "flex", alignItems: "center", gap: 6, borderRadius: 8 }}
-                                        onClick={() => openWhatsApp(c.whatsapp)}
+                                        onClick={(e) => { e.stopPropagation(); openWhatsApp(c.whatsapp); }}
                                     >
                                         <MessageCircle size={14} />
                                     </button>
@@ -240,6 +251,11 @@ export default function Reminders({ showToast, preFilter = "all", onRefresh }) {
                     })}
                 </div>
             </div>
+
+            <CustomerDetailModal
+                customer={viewingCustomer}
+                onClose={() => setViewingCustomer(null)}
+            />
 
             {/* Reschedule modal */}
             {rescheduleTarget && (

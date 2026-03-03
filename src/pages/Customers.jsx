@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import TopBar from "../components/TopBar";
 import CustomerModal from "../components/CustomerModal";
+import CustomerDetailModal from "../components/CustomerDetailModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import {
   getCustomers,
@@ -43,6 +44,7 @@ export default function Customers({ showToast, onRefresh }) {
   const [filterPayment, setFilterPayment] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
+  const [viewingCustomer, setViewingCustomer] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
@@ -213,7 +215,12 @@ export default function Customers({ showToast, onRefresh }) {
         {/* --- MOBILE CARDS VIEW --- */}
         <div className="customer-grid mobile-only">
           {filtered.map((c) => (
-            <div key={c.id} className="customer-card">
+            <div
+              key={c.id}
+              className="customer-card"
+              style={{ cursor: "pointer" }}
+              onClick={() => setViewingCustomer(c)}
+            >
               <div className="cc-header">
                 <div className="cc-profile">
                   <div className="cc-avatar">
@@ -284,20 +291,20 @@ export default function Customers({ showToast, onRefresh }) {
                 <div className="cc-actions">
                   <button
                     className="cc-action-btn btn-whatsapp-solid"
-                    onClick={() => openWhatsApp(c.whatsapp)}
+                    onClick={(e) => { e.stopPropagation(); openWhatsApp(c.whatsapp); }}
                   >
                     <MessageCircle size={16} />
                   </button>
                   <button
                     className="cc-action-btn btn-edit-solid"
-                    onClick={() => handleEdit(c)}
+                    onClick={(e) => { e.stopPropagation(); handleEdit(c); }}
                   >
                     <Edit2 size={16} />
                   </button>
                   <button
                     className="cc-action-btn btn-edit-solid"
                     style={{ color: "var(--accent-red)" }}
-                    onClick={() => handleDeleteClick(c)}
+                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(c); }}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -326,7 +333,11 @@ export default function Customers({ showToast, onRefresh }) {
             </thead>
             <tbody>
               {filtered.map((c) => (
-                <tr key={c.id}>
+                <tr
+                  key={c.id}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setViewingCustomer(c)}
+                >
                   <td>
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 10 }}
@@ -404,20 +415,20 @@ export default function Customers({ showToast, onRefresh }) {
                     <div style={{ display: "flex", gap: 8 }}>
                       <button
                         className="cc-action-btn btn-whatsapp-solid"
-                        onClick={() => openWhatsApp(c.whatsapp)}
+                        onClick={(e) => { e.stopPropagation(); openWhatsApp(c.whatsapp); }}
                       >
                         <MessageCircle size={14} />
                       </button>
                       <button
                         className="cc-action-btn btn-edit-solid"
-                        onClick={() => handleEdit(c)}
+                        onClick={(e) => { e.stopPropagation(); handleEdit(c); }}
                       >
                         <Edit2 size={14} />
                       </button>
                       <button
                         className="cc-action-btn btn-edit-solid"
                         style={{ color: "var(--accent-red)" }}
-                        onClick={() => handleDeleteClick(c)}
+                        onClick={(e) => { e.stopPropagation(); handleDeleteClick(c); }}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -430,26 +441,23 @@ export default function Customers({ showToast, onRefresh }) {
         </div>
       </div>
 
+      <CustomerDetailModal
+        customer={viewingCustomer}
+        onClose={() => setViewingCustomer(null)}
+        onEdit={(c) => { setViewingCustomer(null); handleEdit(c); }}
+      />
+
       <CustomerModal
         isOpen={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setEditingCustomer(null);
-        }}
+        onClose={() => { setModalOpen(false); setEditingCustomer(null); }}
         onSave={handleSave}
         customer={editingCustomer}
       />
 
       <ConfirmDialog
         isOpen={confirmOpen}
-        onClose={() => {
-          setConfirmOpen(false);
-          setDeleteTarget(null);
-        }}
-        onConfirm={() => {
-          handleDeleteConfirm();
-          setConfirmOpen(false);
-        }}
+        onClose={() => { setConfirmOpen(false); setDeleteTarget(null); }}
+        onConfirm={() => { handleDeleteConfirm(); setConfirmOpen(false); }}
         title="Delete Customer"
       />
     </>
