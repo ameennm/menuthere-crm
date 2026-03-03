@@ -81,8 +81,8 @@ export default {
                 const now = new Date().toISOString();
 
                 await env.DB.prepare(
-                    `INSERT INTO customers (id, name, whatsapp, status, payment_status, amount, location, restaurant_type, product_type, next_call_date, call_notes, not_interested_reason, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                    `INSERT INTO customers (id, name, whatsapp, status, payment_status, amount, paid_amount, location, restaurant_type, product_type, next_call_date, call_notes, not_interested_reason, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
                 ).bind(
                     id,
                     body.name || '',
@@ -90,6 +90,7 @@ export default {
                     body.status || 'warm',
                     body.paymentStatus || 'pending',
                     parseFloat(body.amount) || 0,
+                    parseFloat(body.paidAmount) || 0,
                     body.location || '',
                     body.restaurantType || 'cafe',
                     body.productType || 'petpooja',
@@ -116,7 +117,7 @@ export default {
                 await env.DB.prepare(
                     `UPDATE customers SET
             name = ?, whatsapp = ?, status = ?, payment_status = ?,
-            amount = ?, location = ?, restaurant_type = ?, product_type = ?,
+            amount = ?, paid_amount = ?, location = ?, restaurant_type = ?, product_type = ?,
             next_call_date = ?, call_notes = ?, not_interested_reason = ?, updated_at = ?
            WHERE id = ?`
                 ).bind(
@@ -125,6 +126,7 @@ export default {
                     body.status ?? existing.status,
                     body.paymentStatus ?? existing.payment_status,
                     parseFloat(body.amount ?? existing.amount) || 0,
+                    parseFloat(body.paidAmount ?? existing.paid_amount) || 0,
                     body.location ?? existing.location,
                     body.restaurantType ?? existing.restaurant_type,
                     body.productType ?? existing.product_type,
@@ -171,15 +173,15 @@ export default {
                     dateParams.push(customFrom, customTo);
                 }
 
-                // Total sales (paid, not-interested excluded, filtered by date)
+                // Total sales (paid amount collected, exclude not-interested)
                 const salesResult = await env.DB.prepare(
-                    `SELECT COALESCE(SUM(amount), 0) as total, COUNT(*) as count
-           FROM customers WHERE payment_status = 'paid' AND status != 'not-interested' ${dateFilter}`
+                    `SELECT COALESCE(SUM(paid_amount), 0) as total, COUNT(*) as count
+           FROM customers WHERE status != 'not-interested' ${dateFilter}`
                 ).bind(...dateParams).first();
 
-                // Total pending (always all-time, exclude not-interested = lost)
+                // Total pending to collect (amount - paid, exclude not-interested)
                 const pendingResult = await env.DB.prepare(
-                    `SELECT COALESCE(SUM(amount), 0) as total, COUNT(*) as count
+                    `SELECT COALESCE(SUM(amount - paid_amount), 0) as total, COUNT(*) as count
            FROM customers WHERE payment_status = 'pending' AND status != 'not-interested'`
                 ).first();
 
@@ -223,8 +225,8 @@ export default {
                     const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
                     const dayResult = await env.DB.prepare(
-                        `SELECT COALESCE(SUM(amount), 0) as total
-             FROM customers WHERE payment_status = 'paid' AND date(created_at) = ?`
+                        `SELECT COALESCE(SUM(paid_amount), 0) as total
+             FROM customers WHERE status != 'not-interested' AND date(created_at) = ?`
                     ).bind(dayStr).first();
 
                     dailySales.push({ date: dayLabel, sales: dayResult.total });
@@ -278,6 +280,7 @@ function toFrontend(row) {
         status: row.status,
         paymentStatus: row.payment_status,
         amount: row.amount,
+        paidAmount: row.paid_amount || 0,
         location: row.location,
         restaurantType: row.restaurant_type,
         productType: row.product_type,

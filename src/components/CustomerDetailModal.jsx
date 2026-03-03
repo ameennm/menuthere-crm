@@ -103,10 +103,26 @@ export default function CustomerDetailModal({ customer, onClose, onEdit }) {
                     <Row icon={Phone} label="WhatsApp" value={customer.whatsapp} />
                     <Row
                         icon={FileText}
-                        label="Amount"
+                        label="Total Amount"
                         value={`₹${(customer.amount || 0).toLocaleString("en-IN")}`}
-                        valueStyle={{ color: customer.paymentStatus === "paid" ? "#34d399" : "#fb923c", fontWeight: 700, fontSize: 16 }}
+                        valueStyle={{ fontWeight: 600, fontSize: 16 }}
                     />
+                    {customer.paidAmount > 0 && (
+                        <Row
+                            icon={FileText}
+                            label="Paid Amount"
+                            value={`₹${(customer.paidAmount || 0).toLocaleString("en-IN")}`}
+                            valueStyle={{ color: "#34d399", fontWeight: 700, fontSize: 15 }}
+                        />
+                    )}
+                    {(customer.amount - (customer.paidAmount || 0)) > 0 && (
+                        <Row
+                            icon={FileText}
+                            label="Pending Amount"
+                            value={`₹${(customer.amount - (customer.paidAmount || 0)).toLocaleString("en-IN")}`}
+                            valueStyle={{ color: "#fb923c", fontWeight: 700, fontSize: 15 }}
+                        />
+                    )}
                     <Row icon={MapPin} label="Location" value={customer.location} />
                     <Row icon={Package} label="Restaurant Type" value={RESTAURANT_LABELS[customer.restaurantType] || customer.restaurantType} />
                     <Row icon={Package} label="Product" value={customer.productType} />

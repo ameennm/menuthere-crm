@@ -276,7 +276,7 @@ export default function Dashboard({ onRefresh }) {
                       className="pending-item-amount"
                       style={{ fontSize: 15 }}
                     >
-                      {formatCurrency(c.amount)}
+                      {formatCurrency((c.amount || 0) - (c.paidAmount || 0))}
                     </div>
                   </div>
                 ))}

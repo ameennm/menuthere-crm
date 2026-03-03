@@ -15,7 +15,8 @@ function getDefaultForm() {
     whatsapp: "",
     status: "hot",
     paymentStatus: "pending",
-    amount: "",
+    amount: "10000",
+    paidAmount: "",
     location: "",
     restaurantType: "restaurant",
     productType: "petpooja",
@@ -39,6 +40,7 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
         status: customer.status || "hot",
         paymentStatus: customer.paymentStatus || "pending",
         amount: customer.amount || "",
+        paidAmount: customer.paidAmount || "",
         location: customer.location || "",
         restaurantType: customer.restaurantType || "restaurant",
         productType: customer.productType || "petpooja",
@@ -61,12 +63,30 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
   function handleSubmit(e) {
     e.preventDefault();
     if (!form.name.trim() || !form.whatsapp.trim()) return;
+
+    const tAmount = parseFloat(form.amount) || 0;
+    const pAmount = parseFloat(form.paidAmount) || 0;
+
+    // Auto-update payment status
+    let payStatus = form.paymentStatus;
+    if (pAmount >= tAmount && tAmount > 0) {
+      payStatus = "paid";
+    } else if (pAmount < tAmount && payStatus === "paid") {
+      payStatus = "pending";
+    }
+
     onSave({
       ...form,
-      amount: parseFloat(form.amount) || 0,
+      amount: tAmount,
+      paidAmount: pAmount,
+      paymentStatus: payStatus,
     });
     setForm(getDefaultForm());
   }
+
+  const tAmount = parseFloat(form.amount) || 0;
+  const pAmount = parseFloat(form.paidAmount) || 0;
+  const pendingAmount = tAmount - pAmount;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -171,17 +191,47 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
                 <option value="pending">⏳ Pending</option>
               </select>
             </div>
-            <div className="form-group">
-              <label className="form-label">Amount (₹)</label>
-              <input
-                className="form-input"
-                type="number"
-                name="amount"
-                value={form.amount}
-                onChange={handleChange}
-                placeholder="0"
-                min="0"
-              />
+            <div className="form-group" style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+              <div>
+                <label className="form-label">Total Amount (₹)</label>
+                <input
+                  className="form-input"
+                  type="number"
+                  name="amount"
+                  value={form.amount}
+                  onChange={handleChange}
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="form-label">Paid Amount (₹)</label>
+                <input
+                  className="form-input"
+                  type="number"
+                  name="paidAmount"
+                  value={form.paidAmount}
+                  onChange={handleChange}
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="form-label">Pending Amount (₹)</label>
+                <div style={{
+                  padding: "9px 12px",
+                  background: "var(--bg-secondary)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: 10,
+                  color: pendingAmount > 0 ? "#fb923c" : pendingAmount < 0 ? "#34d399" : "var(--text-secondary)",
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  height: 40
+                }}>
+                  ₹{pendingAmount.toLocaleString("en-IN")}
+                </div>
+              </div>
             </div>
             <div className="form-group">
               <label className="form-label">Location</label>

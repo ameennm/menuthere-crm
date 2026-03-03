@@ -189,12 +189,15 @@ export function getDashboardStats(dateRange, customFrom, customTo) {
   const active = (c) => c.status !== 'not-interested';
 
   const totalSales = filtered
-    .filter((c) => active(c) && c.paymentStatus === "paid")
-    .reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+    .filter((c) => active(c))
+    .reduce((sum, c) => sum + (parseFloat(c.paidAmount) || 0), 0);
 
   const totalPending = all
     .filter((c) => active(c) && c.paymentStatus === "pending")
-    .reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+    .reduce((sum, c) => {
+      const pending = (parseFloat(c.amount) || 0) - (parseFloat(c.paidAmount) || 0);
+      return sum + (pending > 0 ? pending : 0);
+    }, 0);
 
   const pendingCount = all.filter((c) => active(c) && c.paymentStatus === "pending").length;
   const paidCount = filtered.filter((c) => active(c) && c.paymentStatus === "paid").length;
@@ -226,11 +229,11 @@ export function getDashboardStats(dateRange, customFrom, customTo) {
     const daySales = all
       .filter(
         (c) =>
-          c.paymentStatus === "paid" &&
+          active(c) &&
           c.createdAt &&
           c.createdAt.startsWith(dayStr),
       )
-      .reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+      .reduce((sum, c) => sum + (parseFloat(c.paidAmount) || 0), 0);
     dailySales.push({ date: dayLabel, sales: daySales });
   }
 

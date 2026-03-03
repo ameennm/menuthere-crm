@@ -260,13 +260,18 @@ export default function Customers({ showToast, onRefresh }) {
 
               <div className="cc-details">
                 <div className="cc-amount-col">
-                  <p>Amount Due</p>
+                  <p>{c.paymentStatus === "paid" ? "Paid fully" : "Pending due"}</p>
                   <h3
                     className={c.paymentStatus === "pending" ? "pending" : ""}
                   >
-                    ₹{(c.amount || 0).toLocaleString("en-IN")}
+                    ₹{(c.paymentStatus === "paid" ? (c.amount || 0) : ((c.amount || 0) - (c.paidAmount || 0))).toLocaleString("en-IN")}
                     {c.paymentStatus === "paid" && " ✅"}
                   </h3>
+                  {c.paymentStatus === "pending" && c.paidAmount > 0 && (
+                    <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
+                      Paid: ₹{(c.paidAmount || 0).toLocaleString("en-IN")} / Total: ₹{(c.amount || 0).toLocaleString("en-IN")}
+                    </p>
+                  )}
                 </div>
                 {(c.nextCallDate || c.callNotes) && (
                   <div style={{ width: "100%", marginTop: 8, padding: "8px 0", borderTop: "1px solid var(--border-color)" }}>
@@ -368,8 +373,15 @@ export default function Customers({ showToast, onRefresh }) {
                       {c.paymentStatus === "paid" ? "Paid" : "Pending"}
                     </span>
                   </td>
-                  <td style={{ fontWeight: 600 }}>
-                    ₹{(c.amount || 0).toLocaleString("en-IN")}
+                  <td>
+                    <div style={{ fontWeight: 600, color: c.paymentStatus === "paid" ? "var(--text-primary)" : "#fb923c" }}>
+                      ₹{(c.paymentStatus === "paid" ? (c.amount || 0) : ((c.amount || 0) - (c.paidAmount || 0))).toLocaleString("en-IN")}
+                    </div>
+                    {c.paymentStatus === "pending" && c.paidAmount > 0 && (
+                      <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2, fontWeight: 500 }}>
+                        (Total: ₹{(c.amount || 0).toLocaleString("en-IN")})
+                      </div>
+                    )}
                   </td>
                   <td>
                     <span
