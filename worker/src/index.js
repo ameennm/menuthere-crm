@@ -81,8 +81,8 @@ export default {
                 const now = new Date().toISOString();
 
                 await env.DB.prepare(
-                    `INSERT INTO customers (id, name, whatsapp, status, payment_status, amount, paid_amount, location, restaurant_type, product_type, next_call_date, call_notes, not_interested_reason, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                    `INSERT INTO customers (id, name, whatsapp, status, payment_status, amount, paid_amount, location, restaurant_type, product_type, next_call_date, call_notes, not_interested_reason, is_starred, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
                 ).bind(
                     id,
                     body.name || '',
@@ -97,6 +97,7 @@ export default {
                     body.nextCallDate || '',
                     body.callNotes || '',
                     body.notInterestedReason || '',
+                    body.isStarred ? 1 : 0,
                     now,
                     now
                 ).run();
@@ -118,7 +119,7 @@ export default {
                     `UPDATE customers SET
             name = ?, whatsapp = ?, status = ?, payment_status = ?,
             amount = ?, paid_amount = ?, location = ?, restaurant_type = ?, product_type = ?,
-            next_call_date = ?, call_notes = ?, not_interested_reason = ?, updated_at = ?
+            next_call_date = ?, call_notes = ?, not_interested_reason = ?, is_starred = ?, updated_at = ?
            WHERE id = ?`
                 ).bind(
                     body.name ?? existing.name,
@@ -133,6 +134,7 @@ export default {
                     body.nextCallDate ?? existing.next_call_date ?? '',
                     body.callNotes ?? existing.call_notes ?? '',
                     body.notInterestedReason ?? existing.not_interested_reason ?? '',
+                    body.isStarred !== undefined ? (body.isStarred ? 1 : 0) : existing.is_starred,
                     now,
                     id
                 ).run();
@@ -287,6 +289,7 @@ function toFrontend(row) {
         nextCallDate: row.next_call_date || '',
         callNotes: row.call_notes || '',
         notInterestedReason: row.not_interested_reason || '',
+        isStarred: !!row.is_starred,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
     };

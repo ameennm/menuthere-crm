@@ -6,6 +6,8 @@ import {
   RefreshCw,
   MessageCircle,
   Phone,
+  Search,
+  Star,
 } from "lucide-react";
 import TopBar from "../components/TopBar";
 import DateTimePicker from "../components/DateTimePicker";
@@ -48,6 +50,8 @@ export default function Reminders({ showToast, preFilter = "all", onRefresh }) {
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
   const [newDate, setNewDate] = useState("");
   const [filterType, setFilterType] = useState(preFilter);
+  const [filterStar, setFilterStar] = useState(false);
+  const [search, setSearch] = useState("");
   const [viewingCustomer, setViewingCustomer] = useState(null);
 
   // When navigating between /reminders and /missed, reset filter
@@ -60,16 +64,26 @@ export default function Reminders({ showToast, preFilter = "all", onRefresh }) {
     return unsub;
   }, []);
 
-  // Only customers with a nextCallDate set
+  // Only customers with a nextCallDate set and not marked "not-interested"
   const scheduled = customers
-    .filter((c) => c.nextCallDate)
+    .filter((c) => c.status !== "not-interested" && c.nextCallDate)
     .map((c) => ({ ...c, _kind: classifyCall(c.nextCallDate) }))
     .sort((a, b) => new Date(a.nextCallDate) - new Date(b.nextCallDate));
 
-  const filtered =
-    filterType === "all"
-      ? scheduled
-      : scheduled.filter((c) => c._kind === filterType);
+  const filtered = scheduled.filter((c) => {
+    // Check tab filter
+    if (filterType !== "all" && c._kind !== filterType) return false;
+    // Check star filter
+    if (filterStar && !c.isStarred) return false;
+    // Check search phrase
+    if (search) {
+      const lower = search.toLowerCase();
+      const matchName = c.name?.toLowerCase().includes(lower);
+      const matchWhatsApp = c.whatsapp?.toLowerCase().includes(lower);
+      if (!matchName && !matchWhatsApp) return false;
+    }
+    return true;
+  });
 
   const counts = {
     overdue: scheduled.filter((c) => c._kind === "overdue").length,
@@ -119,9 +133,33 @@ export default function Reminders({ showToast, preFilter = "all", onRefresh }) {
       />
 
       <div className="page-content">
-        {/* Summary pills */}
+        {/* Search and Summary pills */}
         <div className="filter-bar" style={{ marginBottom: 16 }}>
+          <div className="search-input-wrapper">
+            <Search />
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Search reminders by name or whatsapp..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           <div className="filter-scroll">
+            <button
+              className={`filter-pill ${filterStar ? "active" : ""}`}
+              onClick={() => setFilterStar(!filterStar)}
+              style={{ color: filterStar ? "#fbbf24" : "var(--text-secondary)" }}
+            >
+              <Star size={14} fill={filterStar ? "#fbbf24" : "none"} /> Starred
+            </button>
+            <div
+              style={{
+                width: 1,
+                background: "var(--border-color)",
+                margin: "0 4px",
+              }}
+            />
             <button
               className={`filter-pill ${filterType === "all" ? "active" : ""}`}
               onClick={() => setFilterType("all")}
@@ -205,12 +243,12 @@ export default function Reminders({ showToast, preFilter = "all", onRefresh }) {
                 style={{
                   padding: "16px 20px",
                   borderLeft: `4px solid ${c._kind === "overdue"
-                      ? "var(--accent-red)"
-                      : c._kind === "today"
-                        ? "#f59e0b"
-                        : c._kind === "soon"
-                          ? "#f97316"
-                          : "var(--accent-green)"
+                    ? "var(--accent-red)"
+                    : c._kind === "today"
+                      ? "#f59e0b"
+                      : c._kind === "soon"
+                        ? "#f97316"
+                        : "var(--accent-green)"
                     }`,
                   display: "flex",
                   flexDirection: "column",
@@ -244,8 +282,9 @@ export default function Reminders({ showToast, preFilter = "all", onRefresh }) {
                       {c.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 15 }}>
+                      <div style={{ fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", gap: 6 }}>
                         {c.name}
+                        {c.isStarred && <Star size={14} fill="#fbbf24" color="#fbbf24" />}
                       </div>
                       <div
                         style={{ fontSize: 12, color: "var(--text-secondary)" }}

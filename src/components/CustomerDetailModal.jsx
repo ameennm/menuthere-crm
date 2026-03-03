@@ -6,8 +6,8 @@ import {
   MapPin,
   Calendar,
   FileText,
-  AlertCircle,
   Package,
+  Star,
 } from "lucide-react";
 
 const STATUS_LABELS = {
@@ -177,8 +177,9 @@ export default function CustomerDetailModal({ customer, onClose, onEdit }) {
               {customer.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", gap: 6 }}>
                 {customer.name}
+                {customer.isStarred && <Star size={16} fill="#fbbf24" color="#fbbf24" />}
               </div>
               <div
                 style={{

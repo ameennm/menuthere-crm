@@ -44,12 +44,12 @@ export default function App() {
 
   // Missed = past their scheduled call time/date right now (not just day)
   const missedCount = getCustomers().filter(
-    (c) => c.nextCallDate && classifyOverdue(c.nextCallDate),
+    (c) => c.status !== "not-interested" && c.nextCallDate && classifyOverdue(c.nextCallDate),
   ).length;
 
   // Reminder badge: today's calls (not overdue — those show in Missed)
   const reminderCount = getCustomers().filter((c) => {
-    if (!c.nextCallDate) return false;
+    if (c.status === "not-interested" || !c.nextCallDate) return false;
     const now = new Date();
     const callDate = new Date(c.nextCallDate);
     const today = new Date();

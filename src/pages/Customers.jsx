@@ -6,6 +6,7 @@ import {
   Trash2,
   MessageCircle,
   Phone,
+  Star,
   Users as UsersIcon,
 } from "lucide-react";
 import TopBar from "../components/TopBar";
@@ -46,6 +47,7 @@ export default function Customers({ showToast, onRefresh }) {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterPayment, setFilterPayment] = useState("all");
+  const [filterStar, setFilterStar] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [viewingCustomer, setViewingCustomer] = useState(null);
@@ -71,7 +73,8 @@ export default function Customers({ showToast, onRefresh }) {
         : c.status === filterStatus;
     const matchPayment =
       filterPayment === "all" || c.paymentStatus === filterPayment;
-    return matchSearch && matchStatus && matchPayment;
+    const matchStar = filterStar ? c.isStarred : true;
+    return matchSearch && matchStatus && matchPayment && matchStar;
   });
 
   function handleMarkNotInterested(c) {
@@ -108,6 +111,11 @@ export default function Customers({ showToast, onRefresh }) {
     }
     setDeleteTarget(null);
     setConfirmOpen(false);
+  }
+
+  function handleToggleStar(c) {
+    updateCustomer(c.id, { isStarred: !c.isStarred });
+    showToast(c.isStarred ? "Removed from Starred" : "Added to Starred", "success");
   }
 
   function openWhatsApp(number) {
@@ -154,6 +162,20 @@ export default function Customers({ showToast, onRefresh }) {
 
           {/* Scrollable pill filters for mobile, flex for desktop */}
           <div className="filter-scroll">
+            <button
+              className={`filter-pill ${filterStar ? "active" : ""}`}
+              onClick={() => setFilterStar(!filterStar)}
+              style={{ padding: "8px 14px", color: filterStar ? "#fbbf24" : "var(--text-secondary)" }}
+            >
+              <Star size={14} fill={filterStar ? "#fbbf24" : "none"} /> Starred
+            </button>
+            <div
+              style={{
+                width: 1,
+                background: "var(--border-color)",
+                margin: "0 4px",
+              }}
+            />
             {/* Status Pills */}
             <button
               className={`filter-pill ${filterStatus === "all" ? "active" : ""}`}
@@ -356,6 +378,16 @@ export default function Customers({ showToast, onRefresh }) {
                 <div className="cc-actions">
                   <button
                     className="cc-action-btn btn-secondary"
+                    style={{ color: c.isStarred ? "#fbbf24" : "var(--text-secondary)" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleStar(c);
+                    }}
+                  >
+                    <Star size={16} fill={c.isStarred ? "#fbbf24" : "none"} />
+                  </button>
+                  <button
+                    className="cc-action-btn btn-secondary"
                     onClick={(e) => {
                       e.stopPropagation();
                       openCall(c.whatsapp);
@@ -432,6 +464,7 @@ export default function Customers({ showToast, onRefresh }) {
                         {c.name.charAt(0).toUpperCase()}
                       </div>
                       <span style={{ fontWeight: 600 }}>{c.name}</span>
+                      {c.isStarred && <Star size={14} fill="#fbbf24" color="#fbbf24" />}
                     </div>
                   </td>
                   <td style={{ color: "var(--text-secondary)" }}>
@@ -562,6 +595,16 @@ export default function Customers({ showToast, onRefresh }) {
                   </td>
                   <td>
                     <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        className="cc-action-btn btn-secondary"
+                        style={{ color: c.isStarred ? "#fbbf24" : "var(--text-secondary)" }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleStar(c);
+                        }}
+                      >
+                        <Star size={14} fill={c.isStarred ? "#fbbf24" : "none"} />
+                      </button>
                       <button
                         className="cc-action-btn btn-secondary"
                         onClick={(e) => {
