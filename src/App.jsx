@@ -4,13 +4,22 @@ import Sidebar from './components/Sidebar';
 import Toast from './components/Toast';
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
+import Reminders from './pages/Reminders';
 import CustomerModal from './components/CustomerModal';
 import {
   getCustomers,
   addCustomer,
   subscribe,
   hydrate,
+  forceHydrate,
 } from './store/customerStore';
+
+function classifyOverdue(dateStr) {
+  if (!dateStr) return false;
+  const now = new Date();
+  const callDate = new Date(dateStr);
+  return callDate < now;
+}
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -20,20 +29,29 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Subscribe to store changes → auto-refresh UI
   useEffect(() => {
-    const unsub = subscribe(() => {
-      setRefreshKey(k => k + 1);
-    });
+    const unsub = subscribe(() => setRefreshKey(k => k + 1));
     return unsub;
   }, []);
 
-  // Hydrate from D1 on app start
-  useEffect(() => {
-    hydrate();
-  }, []);
+  useEffect(() => { hydrate(); }, []);
 
-  const pendingCount = getCustomers().filter(c => c.paymentStatus === 'pending').length;
+  const pendingCount = getCustomers().filter(c => c.paymentStatus === 'pending' && c.status !== 'not-interested').length;
+
+  // Missed = past their scheduled call time/date right now (not just day)
+  const missedCount = getCustomers().filter(c => c.nextCallDate && classifyOverdue(c.nextCallDate)).length;
+
+  // Reminder badge: today's calls (not overdue — those show in Missed)
+  const reminderCount = getCustomers().filter(c => {
+    if (!c.nextCallDate) return false;
+    const now = new Date();
+    const callDate = new Date(c.nextCallDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    return callDate >= now && callDate <= todayEnd; // upcoming today only
+  }).length;
 
   const showToast = useCallback((message, type = 'success') => {
     const id = Date.now();
@@ -44,7 +62,10 @@ export default function App() {
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  // Handle "Add Customer" from sidebar nav
+  async function handleRefresh() {
+    await forceHydrate();
+  }
+
   function handleAddFromSidebar(data) {
     addCustomer(data);
     showToast('Customer added successfully', 'success');
@@ -52,11 +73,8 @@ export default function App() {
     navigate('/customers');
   }
 
-  // Intercept /customers/new route to open modal
   useEffect(() => {
-    if (location.pathname === '/customers/new') {
-      setAddModalOpen(true);
-    }
+    if (location.pathname === '/customers/new') setAddModalOpen(true);
   }, [location.pathname]);
 
   return (
@@ -65,49 +83,23 @@ export default function App() {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         pendingCount={pendingCount}
+        reminderCount={reminderCount}
+        missedCount={missedCount}
       />
 
       <main className="main-content">
         <Routes>
-          <Route
-            path="/"
-            element={
-              <Dashboard
-                key={refreshKey}
-                onMenuClick={() => setSidebarOpen(true)}
-              />
-            }
-          />
-          <Route
-            path="/customers"
-            element={
-              <Customers
-                key={refreshKey}
-                onMenuClick={() => setSidebarOpen(true)}
-                showToast={showToast}
-              />
-            }
-          />
-          <Route
-            path="/customers/new"
-            element={
-              <Customers
-                key={refreshKey}
-                onMenuClick={() => setSidebarOpen(true)}
-                showToast={showToast}
-              />
-            }
-          />
+          <Route path="/" element={<Dashboard key={refreshKey} onMenuClick={() => setSidebarOpen(true)} onRefresh={handleRefresh} />} />
+          <Route path="/customers" element={<Customers key={refreshKey} onMenuClick={() => setSidebarOpen(true)} showToast={showToast} onRefresh={handleRefresh} />} />
+          <Route path="/customers/new" element={<Customers key={refreshKey} onMenuClick={() => setSidebarOpen(true)} showToast={showToast} onRefresh={handleRefresh} />} />
+          <Route path="/reminders" element={<Reminders key={refreshKey} onMenuClick={() => setSidebarOpen(true)} showToast={showToast} preFilter="all" onRefresh={handleRefresh} />} />
+          <Route path="/missed" element={<Reminders key={refreshKey} onMenuClick={() => setSidebarOpen(true)} showToast={showToast} preFilter="overdue" onRefresh={handleRefresh} />} />
         </Routes>
       </main>
 
-      {/* Modal for /customers/new route */}
       <CustomerModal
         isOpen={addModalOpen}
-        onClose={() => {
-          setAddModalOpen(false);
-          navigate('/customers');
-        }}
+        onClose={() => { setAddModalOpen(false); navigate('/customers'); }}
         onSave={handleAddFromSidebar}
         customer={null}
       />

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import {
   Search,
-  Plus,
   Edit2,
   Trash2,
   MessageCircle,
@@ -25,7 +24,18 @@ const RESTAURANT_LABELS = {
   hotel: "🏨 Hotel",
 };
 
-export default function Customers({ showToast }) {
+const STATUS_LABELS = {
+  hot: "🔥 Hot",
+  warm: "🌡️ Warm",
+  "not-interested": "👎 Not Interested",
+};
+
+const STATUS_BADGE_STYLE = {
+  "not-interested": { background: "#2a1a1a", color: "#f87171", border: "1px solid #f87171" },
+};
+
+
+export default function Customers({ showToast, onRefresh }) {
   const [customers, setCustomers] = useState(getCustomers);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -47,11 +57,20 @@ export default function Customers({ showToast }) {
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.whatsapp.includes(search) ||
       (c.location || "").toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "all" || c.status === filterStatus;
+    // Hide not-interested unless explicitly filtered
+    const matchStatus =
+      filterStatus === "all"
+        ? c.status !== "not-interested"
+        : c.status === filterStatus;
     const matchPayment =
       filterPayment === "all" || c.paymentStatus === filterPayment;
     return matchSearch && matchStatus && matchPayment;
   });
+
+  function handleMarkNotInterested(c) {
+    updateCustomer(c.id, { status: "not-interested" });
+    showToast(`${c.name} moved to Not Interested`, "success");
+  }
 
   function handleSave(data) {
     if (editingCustomer) {
@@ -94,6 +113,7 @@ export default function Customers({ showToast }) {
       <TopBar
         title="Customers"
         subtitle={`${filtered.length} total contacts`}
+        onRefresh={onRefresh}
       />
 
       <div className="page-content">
@@ -129,6 +149,13 @@ export default function Customers({ showToast }) {
               onClick={() => setFilterStatus("warm")}
             >
               🌡️ Warm
+            </button>
+            <button
+              className={`filter-pill ${filterStatus === "not-interested" ? "active" : ""}`}
+              onClick={() => setFilterStatus("not-interested")}
+              style={{ color: filterStatus === "not-interested" ? undefined : "var(--text-secondary)" }}
+            >
+              👎 Not Interested
             </button>
             <div
               style={{
@@ -228,6 +255,11 @@ export default function Customers({ showToast }) {
                       <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 4 }}>
                         📅 <strong>Next Call:</strong>{" "}
                         {new Date(c.nextCallDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        {c.nextCallDate.includes("T") && !c.nextCallDate.endsWith("T00:00") && (
+                          <span style={{ marginLeft: 6, color: "#60a5fa" }}>
+                            ⏰ {new Date(c.nextCallDate).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                          </span>
+                        )}
                       </p>
                     )}
                     {c.callNotes && (
@@ -340,9 +372,16 @@ export default function Customers({ showToast }) {
                     )}
                   </td>
                   <td style={{ color: "var(--text-secondary)", fontSize: 13 }}>
-                    {c.nextCallDate
-                      ? new Date(c.nextCallDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-                      : <span style={{ opacity: 0.4 }}>—</span>}
+                    {c.nextCallDate ? (
+                      <span>
+                        {new Date(c.nextCallDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        {c.nextCallDate.includes("T") && !c.nextCallDate.endsWith("T00:00") && (
+                          <span style={{ display: "block", color: "#60a5fa", fontSize: 11 }}>
+                            ⏰ {new Date(c.nextCallDate).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                          </span>
+                        )}
+                      </span>
+                    ) : <span style={{ opacity: 0.4 }}>—</span>}
                   </td>
                   <td style={{ color: "var(--text-secondary)", fontSize: 13, maxWidth: 200 }}>
                     {c.callNotes

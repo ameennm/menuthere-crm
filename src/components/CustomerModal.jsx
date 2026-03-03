@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import DateTimePicker from "./DateTimePicker";
 
 const defaultForm = {
   name: "",
@@ -12,7 +13,9 @@ const defaultForm = {
   productType: "petpooja",
   nextCallDate: "",
   callNotes: "",
+  notInterestedReason: "",
 };
+
 
 
 export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
@@ -32,6 +35,7 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
         productType: customer.productType || "petpooja",
         nextCallDate: customer.nextCallDate || "",
         callNotes: customer.callNotes || "",
+        notInterestedReason: customer.notInterestedReason || "",
       });
     } else {
       setForm(defaultForm);
@@ -94,7 +98,27 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
                 required
               />
             </div>
-            <div className="form-group">
+            <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+              <label className="form-label">📅 Next Call Date & Time</label>
+              <DateTimePicker
+                name="nextCallDate"
+                value={form.nextCallDate}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+              <label className="form-label">📝 What They Said / Call Notes</label>
+              <textarea
+                className="form-input"
+                name="callNotes"
+                value={form.callNotes}
+                onChange={handleChange}
+                placeholder="e.g. Interested but waiting for budget approval, callback in 2 weeks..."
+                rows={3}
+                style={{ resize: "vertical", minHeight: 72 }}
+              />
+            </div>
+            <div className="form-group" style={{ gridColumn: form.status === "not-interested" ? "1 / -1" : undefined }}>
               <label className="form-label">Lead Status</label>
               <select
                 className="form-select"
@@ -104,8 +128,28 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
               >
                 <option value="hot">🔥 Hot</option>
                 <option value="warm">🌡️ Warm</option>
+                <option value="not-interested">👎 Not Interested</option>
               </select>
             </div>
+            {form.status === "not-interested" && (
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                <label className="form-label">🚫 Reason for Not Interested</label>
+                <textarea
+                  className="form-input"
+                  name="notInterestedReason"
+                  value={form.notInterestedReason}
+                  onChange={handleChange}
+                  placeholder="e.g. Already using a competitor, budget issues, no decision maker available..."
+                  rows={3}
+                  style={{
+                    resize: "vertical",
+                    minHeight: 72,
+                    borderColor: "var(--accent-red)",
+                    borderWidth: 1,
+                  }}
+                />
+              </div>
+            )}
             <div className="form-group">
               <label className="form-label">Payment Status</label>
               <select
@@ -167,28 +211,6 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
                 <option value="digital menu">Digital Menu</option>
                 <option value="deliver/billing">Deliver / Billing</option>
               </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">📅 Next Call Date</label>
-              <input
-                className="form-input"
-                type="date"
-                name="nextCallDate"
-                value={form.nextCallDate}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-              <label className="form-label">📝 What They Said / Call Notes</label>
-              <textarea
-                className="form-input"
-                name="callNotes"
-                value={form.callNotes}
-                onChange={handleChange}
-                placeholder="e.g. Interested but waiting for budget approval, callback in 2 weeks..."
-                rows={3}
-                style={{ resize: "vertical", minHeight: 72 }}
-              />
             </div>
           </div>
         </div>

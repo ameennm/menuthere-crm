@@ -52,14 +52,27 @@ export async function hydrate() {
   try {
     const remote = await customerAPI.getAll();
     if (Array.isArray(remote)) {
-      // Overwrite even if empty so DB is the absolute source of truth
       customers = remote;
       notify();
     }
     isHydrated = true;
   } catch (err) {
     console.warn("Could not fetch from API, using local data:", err.message);
-    isHydrated = true; // continue with local data
+    isHydrated = true;
+  }
+}
+
+// Force a fresh fetch from DB regardless of hydration state
+export async function forceHydrate() {
+  try {
+    const remote = await customerAPI.getAll();
+    if (Array.isArray(remote)) {
+      customers = remote;
+      notify();
+    }
+  } catch (err) {
+    console.warn("Force refresh failed, keeping existing data:", err.message);
+    throw err;
   }
 }
 
@@ -172,19 +185,23 @@ export function getDashboardStats(dateRange, customFrom, customTo) {
   const filtered = getFilteredCustomers(dateRange, customFrom, customTo);
   const all = getCustomers();
 
+  // Exclude not-interested: they are lost leads, don't count in financials
+  const active = (c) => c.status !== 'not-interested';
+
   const totalSales = filtered
-    .filter((c) => c.paymentStatus === "paid")
+    .filter((c) => active(c) && c.paymentStatus === "paid")
     .reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
 
   const totalPending = all
-    .filter((c) => c.paymentStatus === "pending")
+    .filter((c) => active(c) && c.paymentStatus === "pending")
     .reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
 
-  const pendingCount = all.filter((c) => c.paymentStatus === "pending").length;
-  const paidCount = filtered.filter((c) => c.paymentStatus === "paid").length;
+  const pendingCount = all.filter((c) => active(c) && c.paymentStatus === "pending").length;
+  const paidCount = filtered.filter((c) => active(c) && c.paymentStatus === "paid").length;
   const hotLeads = filtered.filter((c) => c.status === "hot").length;
   const warmLeads = filtered.filter((c) => c.status === "warm").length;
-  const totalCustomers = filtered.length;
+  const lostLeads = filtered.filter((c) => c.status === "not-interested").length;
+  const totalCustomers = filtered.filter(active).length;
 
   const byRestaurant = {
     restaurant: filtered.filter((c) => c.restaurantType === "restaurant")
@@ -217,9 +234,9 @@ export function getDashboardStats(dateRange, customFrom, customTo) {
     dailySales.push({ date: dayLabel, sales: daySales });
   }
 
-  // Pending payments list
+  // Pending payments list — exclude not-interested
   const pendingPayments = all
-    .filter((c) => c.paymentStatus === "pending")
+    .filter((c) => c.status !== 'not-interested' && c.paymentStatus === "pending")
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   return {
@@ -229,6 +246,7 @@ export function getDashboardStats(dateRange, customFrom, customTo) {
     paidCount,
     hotLeads,
     warmLeads,
+    lostLeads,
     totalCustomers,
     byRestaurant,
     dailySales,

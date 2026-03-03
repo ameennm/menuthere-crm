@@ -81,8 +81,8 @@ export default {
                 const now = new Date().toISOString();
 
                 await env.DB.prepare(
-                    `INSERT INTO customers (id, name, whatsapp, status, payment_status, amount, location, restaurant_type, product_type, next_call_date, call_notes, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                    `INSERT INTO customers (id, name, whatsapp, status, payment_status, amount, location, restaurant_type, product_type, next_call_date, call_notes, not_interested_reason, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
                 ).bind(
                     id,
                     body.name || '',
@@ -95,6 +95,7 @@ export default {
                     body.productType || 'petpooja',
                     body.nextCallDate || '',
                     body.callNotes || '',
+                    body.notInterestedReason || '',
                     now,
                     now
                 ).run();
@@ -116,7 +117,7 @@ export default {
                     `UPDATE customers SET
             name = ?, whatsapp = ?, status = ?, payment_status = ?,
             amount = ?, location = ?, restaurant_type = ?, product_type = ?,
-            next_call_date = ?, call_notes = ?, updated_at = ?
+            next_call_date = ?, call_notes = ?, not_interested_reason = ?, updated_at = ?
            WHERE id = ?`
                 ).bind(
                     body.name ?? existing.name,
@@ -129,6 +130,7 @@ export default {
                     body.productType ?? existing.product_type,
                     body.nextCallDate ?? existing.next_call_date ?? '',
                     body.callNotes ?? existing.call_notes ?? '',
+                    body.notInterestedReason ?? existing.not_interested_reason ?? '',
                     now,
                     id
                 ).run();
@@ -169,21 +171,21 @@ export default {
                     dateParams.push(customFrom, customTo);
                 }
 
-                // Total sales (paid, filtered by date)
+                // Total sales (paid, not-interested excluded, filtered by date)
                 const salesResult = await env.DB.prepare(
                     `SELECT COALESCE(SUM(amount), 0) as total, COUNT(*) as count
-           FROM customers WHERE payment_status = 'paid' ${dateFilter}`
+           FROM customers WHERE payment_status = 'paid' AND status != 'not-interested' ${dateFilter}`
                 ).bind(...dateParams).first();
 
-                // Total pending (always all-time)
+                // Total pending (always all-time, exclude not-interested = lost)
                 const pendingResult = await env.DB.prepare(
                     `SELECT COALESCE(SUM(amount), 0) as total, COUNT(*) as count
-           FROM customers WHERE payment_status = 'pending'`
+           FROM customers WHERE payment_status = 'pending' AND status != 'not-interested'`
                 ).first();
 
-                // Total customers in period
+                // Total active customers in period (exclude not-interested)
                 const totalResult = await env.DB.prepare(
-                    `SELECT COUNT(*) as count FROM customers WHERE 1=1 ${dateFilter}`
+                    `SELECT COUNT(*) as count FROM customers WHERE status != 'not-interested' ${dateFilter}`
                 ).bind(...dateParams).first();
 
                 // Hot / Warm leads in period
@@ -228,9 +230,9 @@ export default {
                     dailySales.push({ date: dayLabel, sales: dayResult.total });
                 }
 
-                // Pending payments list
+                // Pending payments list (exclude not-interested = lost)
                 const pendingList = await env.DB.prepare(
-                    `SELECT * FROM customers WHERE payment_status = 'pending' ORDER BY created_at DESC`
+                    `SELECT * FROM customers WHERE payment_status = 'pending' AND status != 'not-interested' ORDER BY created_at DESC`
                 ).all();
 
                 return json({
@@ -281,6 +283,7 @@ function toFrontend(row) {
         productType: row.product_type,
         nextCallDate: row.next_call_date || '',
         callNotes: row.call_notes || '',
+        notInterestedReason: row.not_interested_reason || '',
         createdAt: row.created_at,
         updatedAt: row.updated_at,
     };

@@ -20,7 +20,7 @@ function formatCurrency(val) {
   return "₹" + val.toLocaleString("en-IN");
 }
 
-export default function Dashboard() {
+export default function Dashboard({ onRefresh }) {
   const [dateRange, setDateRange] = useState("all");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
@@ -37,7 +37,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <TopBar title="Dashboard" subtitle="Business Overview">
+      <TopBar title="Dashboard" subtitle="Business Overview" onRefresh={onRefresh}>
         <Link
           to="/customers/new"
           className="btn btn-primary btn-sm"
