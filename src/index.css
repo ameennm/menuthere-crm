@@ -640,10 +640,17 @@ button {
 
 .cc-details {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
+  flex-direction: column;
+  gap: 12px;
   padding-top: 14px;
   border-top: 1px solid var(--border-color);
+}
+
+.cc-details-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
 }
 
 .cc-amount-col p {
@@ -665,7 +672,11 @@ button {
 
 .cc-actions {
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+  margin-top: 8px;
 }
 
 .cc-action-btn {
