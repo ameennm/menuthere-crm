@@ -81,8 +81,8 @@ export default {
                 const now = new Date().toISOString();
 
                 await env.DB.prepare(
-                    `INSERT INTO customers (id, name, whatsapp, status, payment_status, amount, location, restaurant_type, product_type, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                    `INSERT INTO customers (id, name, whatsapp, status, payment_status, amount, location, restaurant_type, product_type, next_call_date, call_notes, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
                 ).bind(
                     id,
                     body.name || '',
@@ -93,6 +93,8 @@ export default {
                     body.location || '',
                     body.restaurantType || 'cafe',
                     body.productType || 'petpooja',
+                    body.nextCallDate || '',
+                    body.callNotes || '',
                     now,
                     now
                 ).run();
@@ -113,7 +115,8 @@ export default {
                 await env.DB.prepare(
                     `UPDATE customers SET
             name = ?, whatsapp = ?, status = ?, payment_status = ?,
-            amount = ?, location = ?, restaurant_type = ?, product_type = ?, updated_at = ?
+            amount = ?, location = ?, restaurant_type = ?, product_type = ?,
+            next_call_date = ?, call_notes = ?, updated_at = ?
            WHERE id = ?`
                 ).bind(
                     body.name ?? existing.name,
@@ -124,6 +127,8 @@ export default {
                     body.location ?? existing.location,
                     body.restaurantType ?? existing.restaurant_type,
                     body.productType ?? existing.product_type,
+                    body.nextCallDate ?? existing.next_call_date ?? '',
+                    body.callNotes ?? existing.call_notes ?? '',
                     now,
                     id
                 ).run();
@@ -274,6 +279,8 @@ function toFrontend(row) {
         location: row.location,
         restaurantType: row.restaurant_type,
         productType: row.product_type,
+        nextCallDate: row.next_call_date || '',
+        callNotes: row.call_notes || '',
         createdAt: row.created_at,
         updatedAt: row.updated_at,
     };

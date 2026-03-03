@@ -10,7 +10,10 @@ const defaultForm = {
   location: "",
   restaurantType: "restaurant",
   productType: "petpooja",
+  nextCallDate: "",
+  callNotes: "",
 };
+
 
 export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
   const [form, setForm] = useState(defaultForm);
@@ -27,6 +30,8 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
         location: customer.location || "",
         restaurantType: customer.restaurantType || "restaurant",
         productType: customer.productType || "petpooja",
+        nextCallDate: customer.nextCallDate || "",
+        callNotes: customer.callNotes || "",
       });
     } else {
       setForm(defaultForm);
@@ -162,6 +167,28 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }) {
                 <option value="digital menu">Digital Menu</option>
                 <option value="deliver/billing">Deliver / Billing</option>
               </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">📅 Next Call Date</label>
+              <input
+                className="form-input"
+                type="date"
+                name="nextCallDate"
+                value={form.nextCallDate}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+              <label className="form-label">📝 What They Said / Call Notes</label>
+              <textarea
+                className="form-input"
+                name="callNotes"
+                value={form.callNotes}
+                onChange={handleChange}
+                placeholder="e.g. Interested but waiting for budget approval, callback in 2 weeks..."
+                rows={3}
+                style={{ resize: "vertical", minHeight: 72 }}
+              />
             </div>
           </div>
         </div>

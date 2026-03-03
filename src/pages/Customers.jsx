@@ -222,6 +222,21 @@ export default function Customers({ showToast }) {
                     {c.paymentStatus === "paid" && " ✅"}
                   </h3>
                 </div>
+                {(c.nextCallDate || c.callNotes) && (
+                  <div style={{ width: "100%", marginTop: 8, padding: "8px 0", borderTop: "1px solid var(--border-color)" }}>
+                    {c.nextCallDate && (
+                      <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 4 }}>
+                        📅 <strong>Next Call:</strong>{" "}
+                        {new Date(c.nextCallDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    )}
+                    {c.callNotes && (
+                      <p style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                        📝 {c.callNotes}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="cc-actions">
                   <button
                     className="cc-action-btn btn-whatsapp-solid"
@@ -260,6 +275,8 @@ export default function Customers({ showToast }) {
                 <th>Amount</th>
                 <th>Type</th>
                 <th>Product</th>
+                <th>Next Call</th>
+                <th>Call Notes</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -321,6 +338,16 @@ export default function Customers({ showToast }) {
                           .join(" ")}
                       </span>
                     )}
+                  </td>
+                  <td style={{ color: "var(--text-secondary)", fontSize: 13 }}>
+                    {c.nextCallDate
+                      ? new Date(c.nextCallDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+                      : <span style={{ opacity: 0.4 }}>—</span>}
+                  </td>
+                  <td style={{ color: "var(--text-secondary)", fontSize: 13, maxWidth: 200 }}>
+                    {c.callNotes
+                      ? <span title={c.callNotes} style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 180 }}>{c.callNotes}</span>
+                      : <span style={{ opacity: 0.4 }}>—</span>}
                   </td>
                   <td>
                     <div style={{ display: "flex", gap: 8 }}>
