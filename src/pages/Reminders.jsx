@@ -5,6 +5,7 @@ import {
   CalendarClock,
   RefreshCw,
   MessageCircle,
+  Phone,
 } from "lucide-react";
 import TopBar from "../components/TopBar";
 import DateTimePicker from "../components/DateTimePicker";
@@ -100,6 +101,11 @@ export default function Reminders({ showToast, preFilter = "all", onRefresh }) {
     window.open(`https://wa.me/${cleaned}`, "_blank");
   }
 
+  function openCall(number) {
+    const cleaned = number.replace(/[^0-9+]/g, "");
+    window.location.href = `tel:${cleaned}`;
+  }
+
   return (
     <>
       <TopBar
@@ -186,10 +192,10 @@ export default function Reminders({ showToast, preFilter = "all", onRefresh }) {
             });
             const formattedTime = hasTime
               ? callDate.toLocaleTimeString("en-IN", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: true,
-                })
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              })
               : null;
 
             return (
@@ -198,15 +204,14 @@ export default function Reminders({ showToast, preFilter = "all", onRefresh }) {
                 className="card"
                 style={{
                   padding: "16px 20px",
-                  borderLeft: `4px solid ${
-                    c._kind === "overdue"
+                  borderLeft: `4px solid ${c._kind === "overdue"
                       ? "var(--accent-red)"
                       : c._kind === "today"
                         ? "#f59e0b"
                         : c._kind === "soon"
                           ? "#f97316"
                           : "var(--accent-green)"
-                  }`,
+                    }`,
                   display: "flex",
                   flexDirection: "column",
                   gap: 10,
@@ -342,21 +347,37 @@ export default function Reminders({ showToast, preFilter = "all", onRefresh }) {
                     <RefreshCw size={14} /> Reschedule
                   </button>
                   <button
-                    className="cc-action-btn btn-whatsapp-solid"
+                    className="btn btn-secondary"
                     style={{
                       fontSize: 12,
                       padding: "6px 14px",
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
-                      borderRadius: 8,
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openCall(c.whatsapp);
+                    }}
+                  >
+                    <Phone size={14} /> Call
+                  </button>
+                  <button
+                    className="btn btn-whatsapp-solid"
+                    style={{
+                      fontSize: 12,
+                      padding: "6px 14px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      border: "none",
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
                       openWhatsApp(c.whatsapp);
                     }}
                   >
-                    <MessageCircle size={14} />
+                    <MessageCircle size={14} /> WhatsApp
                   </button>
                 </div>
               </div>

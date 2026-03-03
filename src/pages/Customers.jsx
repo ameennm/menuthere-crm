@@ -5,6 +5,7 @@ import {
   Edit2,
   Trash2,
   MessageCircle,
+  Phone,
   Users as UsersIcon,
 } from "lucide-react";
 import TopBar from "../components/TopBar";
@@ -112,6 +113,11 @@ export default function Customers({ showToast, onRefresh }) {
   function openWhatsApp(number) {
     const cleaned = number.replace(/[^0-9]/g, "");
     window.open(`https://wa.me/${cleaned}`, "_blank");
+  }
+
+  function openCall(number) {
+    const cleaned = number.replace(/[^0-9+]/g, "");
+    window.location.href = `tel:${cleaned}`;
   }
 
   return (
@@ -349,6 +355,15 @@ export default function Customers({ showToast, onRefresh }) {
                 )}
                 <div className="cc-actions">
                   <button
+                    className="cc-action-btn btn-secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openCall(c.whatsapp);
+                    }}
+                  >
+                    <Phone size={16} />
+                  </button>
+                  <button
                     className="cc-action-btn btn-whatsapp-solid"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -547,6 +562,15 @@ export default function Customers({ showToast, onRefresh }) {
                   </td>
                   <td>
                     <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        className="cc-action-btn btn-secondary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openCall(c.whatsapp);
+                        }}
+                      >
+                        <Phone size={14} />
+                      </button>
                       <button
                         className="cc-action-btn btn-whatsapp-solid"
                         onClick={(e) => {
